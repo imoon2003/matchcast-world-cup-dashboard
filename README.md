@@ -1,5 +1,7 @@
 # MatchCast: World Cup Command Center
 
+**Live Demo:** https://matchcast-world-cup-dashboard.vercel.app
+
 MatchCast is a React-based World Cup coverage dashboard designed to simulate how a live sports media team could monitor tournament storylines, host-city activity, fan engagement, match windows, and priority coverage signals from one command view.
 
 The project uses realistic mock sports data and a mock API layer to demonstrate frontend patterns commonly used in production applications, including data-driven UI, loading states, error handling, filtering, responsive layouts, and reusable React components.
