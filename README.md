@@ -57,19 +57,20 @@ The project currently uses mock/static World Cup coverage data to keep the exper
 
 ## Project Structure
 
-matchcast-world-cup-dashboard
-├── public
-│   ├── images
+```text
+matchcast-world-cup-dashboard/
+├── public/
+│   ├── images/
 │   └── favicon.svg
-├── screenshots
+├── screenshots/
 │   ├── 01-dashboard-overview.png
 │   ├── 02-coverage-feed.png
 │   ├── 03-filtered-signals.png
 │   └── 04-mobile-responsive.png
-├── src
-│   ├── api
+├── src/
+│   ├── api/
 │   │   └── mockSportsApi.js
-│   ├── components
+│   ├── components/
 │   │   ├── ActiveFilters.jsx
 │   │   ├── CategoryTabs.jsx
 │   │   ├── CoverageSummary.jsx
@@ -83,7 +84,7 @@ matchcast-world-cup-dashboard
 │   │   ├── SpotlightCard.jsx
 │   │   ├── Ticker.jsx
 │   │   └── TrendPanel.jsx
-│   ├── data
+│   ├── data/
 │   │   └── matches.js
 │   ├── App.css
 │   ├── App.jsx
@@ -91,6 +92,7 @@ matchcast-world-cup-dashboard
 ├── index.html
 ├── package.json
 └── README.md
+```
 
 ## Getting Started
 
