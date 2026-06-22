@@ -299,7 +299,7 @@ function App() {
 
         setFanEvents(fallbackData.events);
         setFanEventsContext(
-          `Showing featured World Cup fan events while ${filters.city} event details are still being added.`
+          `No verified local fan events found for ${filters.city}. Featured World Cup events are shown below.`
         );
 
         return;
