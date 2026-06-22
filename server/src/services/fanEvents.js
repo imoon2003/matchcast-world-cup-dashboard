@@ -199,7 +199,7 @@ const FAN_EVENTS = [
       "Community-focused match viewing, local food, entertainment, and family-friendly programming.",
 
     sourceUrl:
-      "https://nynjfwc26.com/bronx/",
+      "https://nynjfwc26.com/fan-events/",
   },
 
   {
@@ -301,7 +301,7 @@ const FAN_EVENTS = [
       "Official FIFA Fan Festival at Fair Park with live match broadcasts, concerts, games, food, and cultural programming.",
 
     sourceUrl:
-      "https://www.dallasfwc26.com/our-venues/fan-festival/",
+      "https://www.dallasfwc26.com/home/fifafanfestival-dallas/",
   },
 
   {
