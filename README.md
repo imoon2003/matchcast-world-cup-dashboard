@@ -1,33 +1,37 @@
 # MatchCast: World Cup Command Center
 
-**Live Demo:** https://matchcast-world-cup-dashboard.vercel.app
+**GitHub:** https://github.com/imoon2003/matchcast-world-cup-dashboard
 
-MatchCast is a React-based World Cup coverage dashboard designed to simulate how a live sports media team could monitor tournament storylines, host-city activity, fan engagement, match windows, and priority coverage signals from one command view.
+MatchCast is a World Cup coverage dashboard built to model how a live sports media or event-operations team could monitor match windows, tournament signals, host-city activity, fan events, and live score updates from one command view.
 
-The project uses realistic mock sports data and a mock API layer to demonstrate frontend patterns commonly used in production applications, including data-driven UI, loading states, error handling, filtering, responsive layouts, and reusable React components.
+The project combines a polished React/Vite frontend with a local Node/Express backend. It uses a World Cup schedule catalog, API-Football score overlays, verified fan-event data, fallback logic, and backend-side response caching to create a more realistic full-stack sports dashboard experience.
 
 ![MatchCast Dashboard Overview](screenshots/01-dashboard-overview.png)
 
 ## Overview
 
-MatchCast was built as a polished frontend portfolio project focused on live sports media and event coverage. The dashboard allows users to explore coverage modules, filter signals by category or topic, select cards to update a spotlight panel, and interact with an audience pulse poll.
+MatchCast was built as a portfolio project focused on frontend engineering, sports media workflows, and practical full-stack architecture.
 
-The project currently uses mock/static World Cup coverage data to keep the experience stable and reviewable, while still modeling the structure of a real data-driven application.
+Users can browse World Cup coverage cards, search and filter match signals, select a match to update the spotlight panel, view live or scheduled match context, and explore verified fan events connected to host cities. The app is designed to stay usable even when external data is incomplete by falling back to local catalog data and featured verified events.
 
 ## Features
 
 * Responsive React dashboard built with Vite
-* Mock API layer for simulated coverage feed retrieval
-* Loading, empty, and error-state handling
-* Search across teams, cities, categories, descriptions, and tags
-* Category filtering for matchday, host city, team spotlight, interactive, and storyline modules
-* Signal tag filtering for topics such as *#USMNT*, *#HostCities*, *#Final*, and *#Mexico*
-* Active filters bar with clear-filter behavior
-* Dynamic spotlight module that updates based on the selected coverage card
-* Interactive audience poll with live vote percentage updates
+* Node/Express backend for World Cup schedule and fan-event APIs
+* API-Football integration for live-score overlays
+* Backend-side response caching to reduce third-party API usage
+* Local World Cup schedule catalog with stable fallback data
+* Verified fan-event discovery layer with city-based filtering
+* Fallback logic for fan-event and match data availability
+* Search across teams, cities, match status, descriptions, and tags
+* Category filtering for matchday, host city, team spotlight, and storyline modules
+* Dynamic spotlight panel that updates based on the selected match card
+* Live match strip with score and match-clock display
 * Coverage summary panel with calculated dashboard metrics
+* Loading, empty, and error-state handling
 * Keyboard-accessible match cards with visible focus states
 * Mobile-responsive layout with stacked sections for smaller screens
+* Environment-controlled system status panel for local development notes
 
 ## Screenshots
 
@@ -53,9 +57,12 @@ The project currently uses mock/static World Cup coverage data to keep the exper
 * Vite
 * JavaScript
 * CSS
+* Node.js
+* Express
+* API-Football
 * CSS Grid
 * Flexbox
-* Mock API data layer
+* Vercel
 
 ## Project Structure
 
@@ -69,9 +76,15 @@ matchcast-world-cup-dashboard/
 │   ├── 02-coverage-feed.png
 │   ├── 03-filtered-signals.png
 │   └── 04-mobile-responsive.png
+├── server/
+│   └── src/
+│       ├── services/
+│       │   ├── fanEvents.js
+│       │   └── scheduleCatalog.js
+│       └── server.js
 ├── src/
 │   ├── api/
-│   │   └── mockSportsApi.js
+│   │   └── matchCastApi.js
 │   ├── components/
 │   │   ├── ActiveFilters.jsx
 │   │   ├── CategoryTabs.jsx
@@ -79,20 +92,20 @@ matchcast-world-cup-dashboard/
 │   │   ├── DashboardControls.jsx
 │   │   ├── EmptyState.jsx
 │   │   ├── ErrorState.jsx
-│   │   ├── FanPoll.jsx
+│   │   ├── FanEvents.jsx
 │   │   ├── Hero.jsx
 │   │   ├── LoadingState.jsx
 │   │   ├── MatchCard.jsx
 │   │   ├── SpotlightCard.jsx
+│   │   ├── SystemStatus.jsx
 │   │   ├── Ticker.jsx
 │   │   └── TrendPanel.jsx
-│   ├── data/
-│   │   └── matches.js
 │   ├── App.css
 │   ├── App.jsx
 │   └── main.jsx
 ├── index.html
 ├── package.json
+├── vite.config.js
 └── README.md
 ```
 
@@ -101,23 +114,45 @@ matchcast-world-cup-dashboard/
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/matchcast-world-cup-dashboard.git
+git clone https://github.com/imoon2003/matchcast-world-cup-dashboard.git
 cd matchcast-world-cup-dashboard
 ```
 
-Install dependencies:
+Install frontend dependencies:
 
 ```bash
 npm install
 ```
 
-Run the development server:
+Install backend dependencies:
+
+```bash
+cd server
+npm install
+```
+
+Create a local frontend environment file in the project root:
+
+```env
+VITE_API_BASE_URL=http://localhost:5050
+VITE_USE_MOCK_FALLBACK=false
+VITE_SHOW_SYSTEM_STATUS=true
+```
+
+Start the backend server:
+
+```bash
+cd server
+npm run dev
+```
+
+Start the frontend in a separate terminal:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL shown in the terminal. It is usually:
+Open the local frontend URL shown in the terminal. It is usually:
 
 ```text
 http://localhost:5173/
@@ -135,21 +170,27 @@ Preview the production build:
 npm run preview
 ```
 
-## Mock Data Approach
+## Data and API Approach
 
-MatchCast currently uses realistic mock sports data instead of a live sports API. This keeps the project stable for portfolio review while still demonstrating frontend patterns used in real-world applications.
+MatchCast uses a hybrid data approach:
 
-The mock API layer supports:
+* A local World Cup schedule catalog provides stable match data.
+* API-Football overlays live score and match-status updates when available.
+* Backend-side caching reduces repeated third-party API calls.
+* Verified fan-event data connects selected matches to nearby public viewing events.
+* Fallback logic keeps the dashboard useful when city-specific event data is unavailable.
 
-* simulated feed retrieval
-* loading state handling
-* empty state handling
-* error state handling
-* retry behavior
-* derived dashboard metrics
-* reusable data-driven components
+This approach keeps the project stable for portfolio review while still demonstrating production-style API handling, caching, fallback logic, and data-driven UI updates.
 
-A future version could connect the mock API layer to a real sports data API.
+## Environment Notes
+
+The `SystemStatus` component is available for local development and portfolio review, but it is hidden unless this environment variable is set:
+
+```env
+VITE_SHOW_SYSTEM_STATUS=true
+```
+
+For public deployment, do not add `VITE_SHOW_SYSTEM_STATUS` in Vercel. This keeps the internal system-status card hidden from regular users.
 
 ## Accessibility
 
@@ -163,13 +204,13 @@ MatchCast includes several accessibility-focused improvements:
 
 ## Future Improvements
 
-* Connect to a real sports data API
-* Add live countdown timers for match windows
-* Add saved or favorite coverage modules
-* Add dedicated team and host-city detail pages
-* Add unit tests for filtering and component behavior
+* Deploy the backend API separately for production use
 * Add route-based navigation with React Router
+* Add dedicated team and host-city detail pages
+* Add saved or favorite coverage modules
+* Add unit tests for filtering and component behavior
+* Expand live-data support for additional tournaments and leagues
 
 ## Disclaimer
 
-This project is a personal portfolio project and is not affiliated with FIFA or any official World Cup organization. Images and data are used for demonstration purposes only.
+This project is a personal portfolio project and is not affiliated with FIFA, API-Football, or any official World Cup organization. Images and data are used for demonstration purposes only.
