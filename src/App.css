@@ -497,11 +497,6 @@ input:focus-visible,
   min-width: 0;
 }
 
-.live-strip-live .live-strip-list {
-  grid-template-columns: minmax(0, 420px);
-  justify-content: center;
-}
-
 .live-strip-match {
   width: 100%;
   min-width: 0;
