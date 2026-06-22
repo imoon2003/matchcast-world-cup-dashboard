@@ -1,10 +1,4 @@
-function DashboardControls({ searchTerm, lastUpdated, onSearchChange }) {
-  const formattedTime = lastUpdated
-    ? new Date(lastUpdated).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "Syncing...";
+function DashboardControls({ searchTerm, onSearchChange }) {
 
   return (
     <div className="dashboard-controls">
@@ -12,9 +6,6 @@ function DashboardControls({ searchTerm, lastUpdated, onSearchChange }) {
         <h2>Coverage Operations Feed</h2>
         <p>Search, filter, and select a signal to update the spotlight module.</p>          
 
-        <p className="last-updated">
-          Last synced: <strong>{formattedTime}</strong>
-        </p>
       </div>
 
       <div className="control-actions">

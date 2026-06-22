@@ -1,4 +1,7 @@
-function Hero({ onViewUSMNT, onFilterHostCities }) {
+function Hero({
+  onViewUSMatches,
+  onViewTodayMatches,
+}) {
   return (
     <div className="hero-copy">
       <div className="hero-main">
@@ -10,24 +13,48 @@ function Hero({ onViewUSMNT, onFilterHostCities }) {
         </h1>
 
         <div className="hero-description-card">
-          <span>Live coverage system</span>
+          <span className="hero-card-label">
+            MatchCast Live Coverage
+          </span>
 
-          <p className="hero-description">
-            Track live signals, host-city momentum, fan engagement, match
-            windows, and priority coverage modules through a responsive React
-            dashboard built for live sports media teams.
-          </p>
+          <div className="hero-feature-list">
+            <div className="hero-feature-item">
+              <span className="hero-feature-dot" aria-hidden="true" />
+              <strong>Live scores</strong>
+              <span className="hero-feature-dot" aria-hidden="true" />
+            </div>
+
+            <div className="hero-feature-item">
+              <span className="hero-feature-dot" aria-hidden="true" />
+              <strong>Full tournament schedule</strong>
+              <span className="hero-feature-dot" aria-hidden="true" />
+            </div>
+
+            <div className="hero-feature-item">
+              <span className="hero-feature-dot" aria-hidden="true" />
+              <strong>Matchday updates</strong>
+              <span className="hero-feature-dot" aria-hidden="true" />
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="hero-bottom">
         <div className="hero-actions">
-          <button className="primary-button" onClick={onViewUSMNT}>
-            View USMNT Signal
+          <button
+            type="button"
+            className="primary-button"
+            onClick={onViewUSMatches}
+          >
+            View US Matches
           </button>
 
-          <button className="secondary-button" onClick={onFilterHostCities}>
-            Filter Host Cities
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onViewTodayMatches}
+          >
+            View Today’s Matches
           </button>
         </div>
 

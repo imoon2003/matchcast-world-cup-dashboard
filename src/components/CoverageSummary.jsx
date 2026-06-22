@@ -1,55 +1,68 @@
-function CoverageSummary({ coverageModules }) {
-  const totalModules = coverageModules.length;
+function CoverageSummary({
+  coverageModules = [],
+}) {
+  const totalMatches =
+    coverageModules.length;
 
-  const highPriorityCount = coverageModules.filter(
-    (module) => module.priority === "High"
-  ).length;
+  const liveMatches =
+    coverageModules.filter(
+      (match) => match.status === "Live"
+    ).length;
 
-  const activeSignals = coverageModules.filter((module) =>
-    ["Trending", "Hot"].includes(module.status)
-  ).length;
+  const upcomingMatches =
+    coverageModules.filter(
+      (match) => match.status === "Upcoming"
+    ).length;
 
-  const averageFanHeat =
-    totalModules > 0
-      ? Math.round(
-          coverageModules.reduce((sum, module) => sum + module.fanScore, 0) /
-            totalModules
-        )
-      : 0;
+  const finalMatches =
+    coverageModules.filter(
+      (match) => match.status === "Final"
+    ).length;
 
   const summaryStats = [
     {
-      label: "Signals",
-      value: totalModules,
-      detail: "coverage modules",
+      label: "Matches",
+      value: totalMatches,
+      detail: "shown on dashboard",
     },
     {
-      label: "Priority",
-      value: highPriorityCount,
-      detail: "producer alerts",
+      label: "Live",
+      value: liveMatches,
+      detail: "currently in progress",
     },
     {
-      label: "Active",
-      value: activeSignals,
-      detail: "hot or trending",
+      label: "Upcoming",
+      value: upcomingMatches,
+      detail: "scheduled fixtures",
     },
     {
-      label: "Fan Heat",
-      value: `${averageFanHeat}%`,
-      detail: "average signal",
+      label: "Final",
+      value: finalMatches,
+      detail: "completed results",
     },
   ];
 
   return (
-    <section className="summary-panel" aria-label="Live coverage summary">
-      <p className="eyebrow">Control Snapshot</p>
+    <section
+      className="summary-panel"
+      aria-label="Match coverage summary"
+    >
+      <p className="eyebrow">
+        Control Snapshot
+      </p>
+
       <h2>Coverage Room Status</h2>
 
       <div className="summary-grid">
         {summaryStats.map((stat) => (
-          <div className="summary-stat" key={stat.label}>
+          <div
+            className="summary-stat"
+            key={stat.label}
+          >
             <span>{stat.label}</span>
+
             <strong>{stat.value}</strong>
+
             <p>{stat.detail}</p>
           </div>
         ))}

@@ -1,20 +1,60 @@
-function TrendPanel({ trendingTopics, onTopicSelect }) {
+function formatTopicLabel(topic) {
+  const cleanTopic = topic.replace("#", "");
+
+  const customLabels = {
+    USMNT: "US Matches",
+    WorldCup2026: "World Cup 2026",
+  };
+
+  if (customLabels[cleanTopic]) {
+    return customLabels[cleanTopic];
+  }
+
+  if (/^Group[A-L]$/.test(cleanTopic)) {
+    return cleanTopic.replace(
+      "Group",
+      "Group "
+    );
+  }
+
+  return cleanTopic.replace(
+    /([a-z])([A-Z])/g,
+    "$1 $2"
+  );
+}
+
+function TrendPanel({
+  trendingTopics,
+  onTopicSelect,
+}) {
   return (
     <section className="trend-panel">
-      <p className="eyebrow">Signal Tags</p>
-      <h2>Coverage Topics</h2>
+      <p className="eyebrow">Quick Filters</p>
+      <h2>Match Topics</h2>
 
-      <div className="topic-list">
-        {trendingTopics.map((topic) => (
-          <button
-            key={topic}
-            aria-label={`Filter by coverage topic ${topic}`}
-            onClick={() => onTopicSelect(topic)}
-          >
-            {topic}
-          </button>
-        ))}
-      </div>
+      {trendingTopics.length > 0 ? (
+        <div className="topic-list">
+          {trendingTopics.map((topic) => (
+            <button
+              type="button"
+              key={topic}
+              aria-label={`Filter by ${formatTopicLabel(
+                topic
+              )}`}
+              onClick={() =>
+                onTopicSelect(topic)
+              }
+            >
+              #
+              {formatTopicLabel(topic)}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="topic-empty">
+          No active topics available.
+        </p>
+      )}
     </section>
   );
 }

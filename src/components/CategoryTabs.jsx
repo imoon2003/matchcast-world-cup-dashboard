@@ -1,15 +1,28 @@
-function CategoryTabs({ categories, selectedCategory, onSelectCategory }) {
+function CategoryTabs({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}) {
   return (
-    <div className="category-tabs" aria-label="Coverage categories">
+    <div
+      className="category-tabs"
+      aria-label="Match filters"
+    >
       {categories.map((category) => {
-        const isSelected = selectedCategory === category;
+        const isSelected =
+          selectedCategory === category;
 
         return (
           <button
+            type="button"
             key={category}
-            className={isSelected ? "active-tab" : ""}
+            className={
+              isSelected ? "active-tab" : ""
+            }
             aria-pressed={isSelected}
-            onClick={() => onSelectCategory(category)}
+            onClick={() =>
+              onSelectCategory(category)
+            }
           >
             {category}
           </button>

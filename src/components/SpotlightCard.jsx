@@ -1,25 +1,43 @@
 function SpotlightCard({ selectedMatch }) {
   if (!selectedMatch) {
     return (
-      <aside className="spotlight-card" aria-live="polite">
+      <aside
+        className="spotlight-card"
+        aria-live="polite"
+      >
         <div className="spotlight-header">
-          <div className="live-orb"></div>
           <span>Syncing</span>
         </div>
 
-        <p className="spotlight-label">Spotlight Module</p>
+        <p className="spotlight-label">
+          Spotlight Module
+        </p>
+
         <h2>Loading MatchCast coverage...</h2>
+
         <p>
-          Fetching World Cup modules, fan activity, and live-event storylines.
+          Fetching World Cup schedules, scores,
+          match statuses, and key storylines.
         </p>
       </aside>
     );
   }
 
+  const isLive = selectedMatch.status === "Live";
+
   return (
-    <aside className="spotlight-card" aria-live="polite">
+    <aside
+      className="spotlight-card"
+      aria-live="polite"
+    >
       <div className="spotlight-header">
-        <div className="live-orb"></div>
+        {isLive && (
+          <div
+            className="live-orb"
+            aria-hidden="true"
+          />
+        )}
+
         <span>{selectedMatch.status}</span>
       </div>
 
@@ -30,47 +48,72 @@ function SpotlightCard({ selectedMatch }) {
             alt={selectedMatch.imageAlt}
             className="spotlight-image"
           />
-          <div className="spotlight-image-overlay"></div>
+
+          <div className="spotlight-image-overlay" />
         </div>
       )}
 
-      <p className="spotlight-label">Spotlight Module</p>
+      <p className="spotlight-label">
+        Spotlight Module
+      </p>
+
       <h2>{selectedMatch.title}</h2>
+
       <p>{selectedMatch.description}</p>
 
-      <div className="spotlight-meta">
-        <span>{selectedMatch.city}</span>
-        <span>{selectedMatch.viewers}</span>
-        <span>{selectedMatch.priority} Priority</span>
+      <div
+        className={`spotlight-scoreline ${
+          isLive
+            ? "spotlight-scoreline-live"
+            : "spotlight-scoreline-muted"
+        }`}
+      >
+        {selectedMatch.scoreLabel}
       </div>
 
       <div className="spotlight-grid">
         <div>
-          <span>Kickoff Window</span>
-          <strong>{selectedMatch.time || "TBD"}</strong>
+          <span>Kickoff</span>
+
+          <strong>
+            {selectedMatch.time || "TBD"}
+          </strong>
         </div>
 
         <div>
-          <span>Fan Heat</span>
-          <strong>{selectedMatch.fanScore}%</strong>
+          <span>
+            {selectedMatch.progressTitle ||
+              "Match Status"}
+          </span>
+
+          <strong>
+            {selectedMatch.progressLabel ||
+              selectedMatch.status}
+          </strong>
         </div>
       </div>
 
       <div className="coverage-box">
-        <span>Coverage Mode</span>
-        <strong>{selectedMatch.coverage || "Live event monitoring"}</strong>
+        <span>Coverage Details</span>
+
+        <strong>
+          {selectedMatch.coverage ||
+            "Schedule and match-status monitoring"}
+        </strong>
       </div>
 
       <div className="storyline-list">
-        <span>Key Storylines</span>
+        <h3 className="spotlight-details-title">Match Details</h3>
 
         <ul>
           {(selectedMatch.storylines || [
-            "Audience momentum tracking",
-            "Matchday alerts and fan engagement",
-            "Live coverage module updates",
+            "World Cup fixture information",
+            "Venue and kickoff monitoring",
+            "Score and match-status updates",
           ]).map((storyline) => (
-            <li key={storyline}>{storyline}</li>
+            <li key={storyline}>
+              {storyline}
+            </li>
           ))}
         </ul>
       </div>
