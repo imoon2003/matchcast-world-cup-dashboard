@@ -808,16 +808,6 @@ input:focus-visible,
   box-shadow: 0 0 0 4px rgba(125, 249, 255, 0.14);
 }
 
-.last-updated {
-  margin-top: 10px;
-  color: rgba(255, 255, 255, 0.56);
-  font-size: 0.88rem;
-}
-
-.last-updated strong {
-  color: #7df9ff;
-}
-
 .active-filters {
   margin: -4px 0 18px;
   padding: 14px 16px;
