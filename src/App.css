@@ -425,117 +425,6 @@ input:focus-visible,
   background: rgba(0, 0, 0, 0.24);
 }
 
-.spotlight-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 16px;
-  row-gap: 8px;
-  margin-top: 0;
-  margin-bottom: 4px;
-}
-
-.spotlight-grid > div {
-  margin-bottom: 4px;
-}
-
-.coverage-box {
-  margin-top: 8px;
-}
-
-.spotlight-grid div {
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.spotlight-grid div span,
-.spotlight-grid div strong,
-.spotlight-grid div p {
-  text-align: left;
-}
-
-.spotlight-header span {
-  padding: 8px 11px;
-  border-radius: 999px;
-  background: rgba(67, 255, 184, 0.14);
-  color: #43ffb8;
-  font-size: 0.76rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.spotlight-card .spotlight-details-title {
-  width: 100%;
-  margin: 32px 0 16px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  font-weight: 750;
-  text-align: left;
-  align-self: stretch;
-}
-
-.spotlight-grid div {
-  margin-top: 0;
-}
-
-.coverage-box {
-  margin-top: 4px;
-}
-
-.spotlight-grid span,
-.coverage-box span,
-.storyline-list span {
-  display: block;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-}
-
-.spotlight-grid strong,
-.coverage-box strong {
-  color: white;
-  font-size: 0.98rem;
-}
-
-.storyline-list {
-  width: 100%;
-  margin-top: 12px;
-  padding: 24px 26px;
-  border-radius: 28px;
-
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-
-  text-align: center;
-}
-
-.storyline-list .spotlight-details-title {
-  margin: 0 0 18px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1rem;
-  font-weight: 800;
-  text-align: center;
-}
-
-.storyline-list ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  text-align: center;
-}
-
-.storyline-list li {
-  margin: 8px 0;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 0.95rem;
-  line-height: 1.35;
-  text-align: center;
-}
-
 .live-strip {
   width: 100%;
   margin: 22px 0;
@@ -713,6 +602,7 @@ input:focus-visible,
     radial-gradient(circle at top right, rgba(212, 175, 55, 0.2), transparent 38%);
 }
 
+/* Spotlight score + detail cards */
 .spotlight-scoreline {
   margin: 18px auto 48px;
   line-height: 1;
@@ -739,37 +629,21 @@ input:focus-visible,
 }
 
 .spotlight-card .spotlight-grid {
-  row-gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   column-gap: 16px;
-}
-
-.spotlight-card .spotlight-grid > div {
+  row-gap: 24px;
   margin-top: 0;
-}
-
-.spotlight-card .spotlight-grid > div:last-child {
-  margin-top: 0;
-}
-
-.spotlight-card .spotlight-grid > div {
-  padding: 10px 12px;
-}
-
-.spotlight-grid ul {
-  width: 100%;
-  margin: 8px auto 0;
-  padding-left: 0;
-  list-style: none;
-  text-align: center;
-}
-
-.spotlight-grid li {
-  text-align: center;
-  margin: 4px 0;
+  margin-bottom: 4px;
 }
 
 .spotlight-card .spotlight-grid > div,
-.spotlight-card .coverage-box {
+.spotlight-card .coverage-box,
+.spotlight-card .storyline-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
   padding: 12px 14px;
   border-radius: 16px;
 
@@ -779,13 +653,54 @@ input:focus-visible,
   text-align: center;
 }
 
-.spotlight-card .spotlight-grid {
-  margin-bottom: 4px;
-  row-gap: 24px;
-}
-
 .spotlight-card .coverage-box {
   margin-top: 12px;
+}
+
+.spotlight-card .storyline-list {
+  width: 100%;
+  margin-top: 24px;
+}
+
+.spotlight-card .spotlight-grid span,
+.spotlight-card .coverage-box span,
+.spotlight-card .storyline-list .spotlight-details-title {
+  width: 100%;
+  display: block;
+
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+
+  margin: 0 0 10px;
+}
+
+.spotlight-card .spotlight-grid strong,
+.spotlight-card .coverage-box strong,
+.spotlight-card .coverage-box p,
+.spotlight-card .storyline-list li {
+  width: 100%;
+
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.spotlight-card .storyline-list ul {
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.spotlight-card .storyline-list li {
+  margin: 6px 0;
 }
 
 .ticker {
@@ -1866,70 +1781,6 @@ input:focus-visible,
 .fan-event-link:hover {
   text-decoration: none;
   transform: translateY(-1px);
-}
-
-.spotlight-card .spotlight-grid > div,
-.spotlight-card .coverage-box,
-.spotlight-card .storyline-list {
-  text-align: center;
-  align-items: center;
-}
-
-.spotlight-card .spotlight-grid > div span,
-.spotlight-card .spotlight-grid > div strong,
-.spotlight-card .spotlight-grid > div p,
-.spotlight-card .coverage-box span,
-.spotlight-card .coverage-box strong,
-.spotlight-card .coverage-box p,
-.spotlight-card .storyline-list h3,
-.spotlight-card .storyline-list ul,
-.spotlight-card .storyline-list li {
-  width: 100%;
-  text-align: center;
-}
-
-.spotlight-card .storyline-list {
-  width: 100%;
-  margin-top: 24px;
-  padding: 12px 14px;
-  border-radius: 16px;
-
-  background: rgba(255, 255, 255, 0.075);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  text-align: center;
-  align-items: center;
-}
-
-.spotlight-card .storyline-list .spotlight-details-title {
-  width: 100%;
-  margin: 0 0 10px;
-
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.spotlight-card .storyline-list ul {
-  width: 100%;
-  margin: 0 auto;
-  padding-left: 0;
-  list-style: none;
-  text-align: center;
-}
-
-.spotlight-card .storyline-list li {
-  width: 100%;
-  margin: 6px 0;
-
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.88rem;
-  font-weight: 800;
-  line-height: 1.35;
-  text-align: center;
 }
 
 .live-strip-live .live-strip-list {
