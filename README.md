@@ -1,7 +1,8 @@
 # MatchCast: World Cup Command Center
 
-**Status:** Full-stack v2 in progress — local backend integration complete, public deployment pending.
+**Status:** Full-stack v2 deployed.
 
+**Live Demo:** https://matchcast-world-cup-dashboard.vercel.app
 **GitHub:** https://github.com/imoon2003/matchcast-world-cup-dashboard
 
 MatchCast is a World Cup coverage dashboard built to model how a live sports media or event-operations team could monitor match windows, tournament signals, host-city activity, fan events, and live score updates from one command view.
@@ -184,11 +185,6 @@ MatchCast uses a hybrid data approach:
 
 This approach keeps the project stable for portfolio review while still demonstrating production-style API handling, caching, fallback logic, and data-driven UI updates.
 
-## Deployment Status
-
-The current full-stack v2 includes a local Node/Express backend, API-Football score overlays, verified fan-event data, fallback logic, and backend-side caching. A refreshed public deployment is planned after the backend deployment configuration is finalized.
-
-After deployment, this README should be updated with the new live demo link and the pending-deployment status should be removed.
 
 ## Environment Notes
 
