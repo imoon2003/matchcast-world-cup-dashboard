@@ -1,5 +1,6 @@
 {
   "name": "matchcast-world-cup-dashboard",
+  "author": "Iman Ahmed",
   "private": true,
   "version": "0.0.0",
   "type": "module",
