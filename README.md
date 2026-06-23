@@ -215,6 +215,6 @@ MatchCast includes several accessibility-focused improvements:
 * Add unit tests for filtering and component behavior
 * Expand live-data support for additional tournaments and leagues
 
-## Disclaimer
+## Ownership & Disclaimer
 
-This project is a personal portfolio project and is not affiliated with FIFA, API-Football, or any official World Cup organization. Images and data are used for demonstration purposes only.
+MatchCast is an independent portfolio project built by Iman Ahmed. It is not affiliated with FIFA, NBCUniversal, or any official World Cup organization. All event and match references are used for educational and demonstration purposes.
