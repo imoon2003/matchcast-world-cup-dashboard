@@ -3,6 +3,7 @@
 **Status:** Full-stack v2 deployed.
 
 **Live Demo:** https://matchcast-world-cup-dashboard.vercel.app
+
 **GitHub:** https://github.com/imoon2003/matchcast-world-cup-dashboard
 
 MatchCast is a World Cup coverage dashboard built to model how a live sports media or event-operations team could monitor match windows, tournament signals, host-city activity, fan events, and live score updates from one command view.
