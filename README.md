@@ -114,6 +114,26 @@ matchcast-world-cup-dashboard/
 ├── vite.config.js
 └── README.md
 ```
+## Tech Decisions
+
+### Backend Caching
+
+MatchCast uses backend-side response caching for World Cup schedule requests to reduce repeated third-party API calls and protect API limits during refreshes. Live match data is cached for a shorter period so scores can stay current, while non-live schedule data is cached longer because it changes less frequently.
+
+This makes the app more reliable in a deployed environment, especially when multiple users are viewing the dashboard or when the frontend refreshes match data in the background.
+
+### Fallback Data Handling
+
+MatchCast combines live API data with a local World Cup schedule catalog. If external API data is unavailable, incomplete, or missing certain match details, the app can still display useful schedule and coverage information from the local dataset.
+
+The fan-events section also uses fallback logic. When verified local fan-event data is not available for a selected host city, the app shows featured World Cup fan events instead of leaving the section empty. This keeps the user experience polished while being transparent about available data.
+
+### Deployment Architecture
+
+The frontend is deployed on Vercel, while the backend API is deployed separately on Render. This separation keeps the React/Vite client lightweight and allows the Node/Express backend to manage API requests, caching, environment variables, CORS settings, and fallback logic.
+
+The deployed frontend communicates with the Render API through a production environment variable, allowing the same codebase to support both local development and production deployment.
+
 
 ## Getting Started
 
