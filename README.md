@@ -10,6 +10,8 @@ MatchCast is a World Cup coverage dashboard built to model how a live sports med
 
 The project combines a polished React/Vite frontend with a local Node/Express backend. It uses a World Cup schedule catalog, API-Football score overlays, verified fan-event data, fallback logic, and backend-side response caching to create a more realistic full-stack sports dashboard experience.
 
+*Built and maintained by **Iman Ahmed** as a full-stack software engineering portfolio project.*
+
 ![MatchCast Dashboard Overview](screenshots/01-dashboard-overview.png)
 
 ## Overview
