@@ -241,4 +241,4 @@ MatchCast includes several accessibility-focused improvements:
 
 ## Ownership & Disclaimer
 
-MatchCast is an independent portfolio project built by Iman Ahmed. It is not affiliated with FIFA, NBCUniversal, or any official World Cup organization. All event and match references are used for educational and demonstration purposes.
+MatchCast is an independent portfolio project built by Iman Ahmed. It is not affiliated with FIFA or any official World Cup organization. All event and match references are used for educational and demonstration purposes.
