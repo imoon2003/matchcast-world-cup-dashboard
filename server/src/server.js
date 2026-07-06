@@ -42,16 +42,14 @@ const app = express();
 
 const port = Number(process.env.PORT) || 5050;
 
-const liveApiProvider =
-  process.env.LIVE_API_PROVIDER || "espn";
+const apiKey = process.env.API_FOOTBALL_KEY;
 
-const useLiveApi =
-  process.env.USE_LIVE_API !== "false";
+const apiBaseUrl =
+  process.env.API_FOOTBALL_BASE_URL ||
+  "https://v3.football.api-sports.io";
 
-const espnSoccerBaseUrl =
-  process.env.ESPN_SOCCER_BASE_URL ||
-  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
-
+const WORLD_CUP_LEAGUE_ID = 1;
+const WORLD_CUP_SEASON = 2026;
 
 // Keep each API response for 15 minutes.
 const CACHE_DURATION = 15 * 60 * 1000;
@@ -110,73 +108,45 @@ function hasApiErrors(errors) {
   );
 }
 
-function formatEspnScoreboardDate(date) {
-  return date.replace(/-/g, "");
-}
-
-const ESPN_TEAM_NAME_ALIASES = {
-  "Bosnia-Herzegovina": "Bosnia and Herzegovina",
-  "Congo DR": "DR Congo",
-  "Côte d'Ivoire": "Ivory Coast",
-};
-
-function cleanEspnTeamName(name) {
-  return ESPN_TEAM_NAME_ALIASES[name] || name || "TBD";
-}
-
-function getEspnScore(competitor, statusType) {
-  if (!competitor || statusType?.state === "pre") {
-    return null;
+async function fetchFromApiFootball(
+  endpoint,
+  parameters = {}
+) {
+  if (!apiKey) {
+    throw new Error(
+      "API_FOOTBALL_KEY is missing from the server environment."
+    );
   }
 
-  const score = competitor.score;
+  const cleanBaseUrl = apiBaseUrl.replace(/\/$/, "");
+  const cleanEndpoint = endpoint.replace(/^\//, "");
 
-  if (score === undefined || score === null || score === "") {
-    return null;
-  }
+  const url = new URL(
+    `${cleanBaseUrl}/${cleanEndpoint}`
+  );
 
-  const numericScore = Number(score);
+  Object.entries(parameters).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      url.searchParams.set(key, String(value));
+    }
+  });
 
-  return Number.isNaN(numericScore) ? null : numericScore;
-}
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "x-apisports-key": apiKey,
+    },
+  });
 
-function normalizeEspnStatus(statusType = {}) {
-  const description =
-    statusType.description ||
-    statusType.detail ||
-    "Scheduled";
-
-  let short = "NS";
-
-  if (statusType.state === "in") {
-    short = "LIVE";
-  } else if (
-    statusType.completed ||
-    statusType.state === "post"
-  ) {
-    short = "FT";
-  }
-
-  return {
-    long: description,
-    short,
-    elapsed: null,
-  };
-}
-
-async function fetchFromEspnScoreboard(date) {
-  const cleanBaseUrl = espnSoccerBaseUrl.replace(/\/$/, "");
-  const scoreboardDate = formatEspnScoreboardDate(date);
-
-  const url = new URL(`${cleanBaseUrl}/scoreboard`);
-  url.searchParams.set("dates", scoreboardDate);
-
-  const response = await fetch(url);
   const payload = await response.json();
 
   if (!response.ok) {
     const error = new Error(
-      `ESPN scoreboard request failed with status ${response.status}.`
+      `API-Football request failed with status ${response.status}.`
     );
 
     error.status = response.status;
@@ -185,98 +155,62 @@ async function fetchFromEspnScoreboard(date) {
     throw error;
   }
 
-  return payload.events || [];
+  if (hasApiErrors(payload.errors)) {
+    const error = new Error(
+      `API-Football error: ${JSON.stringify(
+        payload.errors
+      )}`
+    );
+
+    error.status = 502;
+
+    throw error;
+  }
+
+  return payload;
 }
 
-
-function normalizeEspnEvent(event) {
-  const competition = event.competitions?.[0];
-  const competitors = competition?.competitors || [];
-
-  const home = competitors.find(
-    (competitor) => competitor.homeAway === "home"
-  );
-
-  const away = competitors.find(
-    (competitor) => competitor.homeAway === "away"
-  );
-
-  const statusType = event.status?.type || {};
-  const homeScore = getEspnScore(home, statusType);
-  const awayScore = getEspnScore(away, statusType);
-
+function normalizeFixture(item) {
   return {
-    id: Number(event.id),
-    date: event.date,
-    timestamp: event.date
-      ? Math.floor(new Date(event.date).getTime() / 1000)
-      : null,
+    id: item.fixture.id,
+    date: item.fixture.date,
+    timestamp: item.fixture.timestamp,
+    timezone: item.fixture.timezone,
+
+    status: {
+      long: item.fixture.status.long,
+      short: item.fixture.status.short,
+      elapsed: item.fixture.status.elapsed,
+    },
+
+    round: item.league.round,
 
     venue: {
-      name:
-        competition?.venue?.fullName ||
-        competition?.venue?.displayName ||
-        null,
-      city:
-        competition?.venue?.address?.city ||
-        null,
+      id: item.fixture.venue?.id || null,
+      name: item.fixture.venue?.name || "TBD",
+      city: item.fixture.venue?.city || "TBD",
     },
 
-    status: normalizeEspnStatus(statusType),
-
-    league: {
-      id: "espn-fifa-world",
-      name: "FIFA World Cup",
-      season: 2026,
-      round: event.season?.slug || null,
+    homeTeam: {
+      id: item.teams.home.id,
+      name: item.teams.home.name,
+      logo: item.teams.home.logo,
+      winner: item.teams.home.winner,
     },
 
-    teams: {
-      home: {
-        id: home?.team?.id || null,
-        name: cleanEspnTeamName(
-          home?.team?.displayName ||
-            home?.team?.name
-        ),
-        logo: home?.team?.logo || null,
-        winner: home?.winner ?? null,
-      },
-      away: {
-        id: away?.team?.id || null,
-        name: cleanEspnTeamName(
-          away?.team?.displayName ||
-            away?.team?.name
-        ),
-        logo: away?.team?.logo || null,
-        winner: away?.winner ?? null,
-      },
+    awayTeam: {
+      id: item.teams.away.id,
+      name: item.teams.away.name,
+      logo: item.teams.away.logo,
+      winner: item.teams.away.winner,
     },
 
     goals: {
-      home: homeScore,
-      away: awayScore,
+      home: item.goals.home,
+      away: item.goals.away,
     },
 
-    score: {
-      halftime: {
-        home: null,
-        away: null,
-      },
-      fulltime: {
-        home: homeScore,
-        away: awayScore,
-      },
-      extratime: {
-        home: null,
-        away: null,
-      },
-      penalty: {
-        home: null,
-        away: null,
-      },
-    },
-
-    source: "ESPN",
+    score: item.score,
   };
 }
 
@@ -292,57 +226,45 @@ async function getWorldCupFixtures(date) {
       data: cachedResult.data,
       fetchedAt: cachedResult.fetchedAt,
       cached: true,
-      source: cachedResult.source,
     };
   }
 
-  if (!useLiveApi || liveApiProvider !== "espn") {
-    return {
-      data: [],
-      fetchedAt: null,
-      cached: false,
-      source: "fallback",
-    };
-  }
+  const payload = await fetchFromApiFootball(
+    "fixtures",
+    {
+      date,
+      timezone: "America/New_York",
+    }
+  );
 
-  try {
-    const espnEvents = await fetchFromEspnScoreboard(date);
-    const fixtures = espnEvents.map(normalizeEspnEvent);
-    const fetchedAt = new Date().toISOString();
+  const fixtures = payload.response
+    .filter(
+      (item) =>
+        item.league?.id === WORLD_CUP_LEAGUE_ID &&
+        Number(item.league?.season) ===
+          WORLD_CUP_SEASON
+    )
+    .map(normalizeFixture);
 
-    fixtureCache.set(date, {
-      data: fixtures,
-      fetchedAt,
-      source: "ESPN",
-      expiresAt: currentTime + CACHE_DURATION,
-    });
+  const fetchedAt = new Date().toISOString();
 
-    return {
-      data: fixtures,
-      fetchedAt,
-      cached: false,
-      source: "ESPN",
-    };
-  } catch (error) {
-    console.warn(
-      "ESPN live provider failed. Using fallback MatchCast data:",
-      error.message
-    );
+  fixtureCache.set(date, {
+    data: fixtures,
+    fetchedAt,
+    expiresAt: currentTime + CACHE_DURATION,
+  });
 
-    return {
-      data: [],
-      fetchedAt: null,
-      cached: false,
-      source: "fallback",
-      providerError: error.message,
-    };
-  }
+  return {
+    data: fixtures,
+    fetchedAt,
+    cached: false,
+  };
 }
 
 function sendFixtureResponse(res, date, result) {
   res.json({
     success: true,
-    source: result.source || "ESPN",
+    source: "API-Football",
     competition: "FIFA World Cup 2026",
     date,
     count: result.data.length,
