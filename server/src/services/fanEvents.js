@@ -434,6 +434,13 @@ function getCitySearchValues(city) {
       "new jersey",
     ],
 
+    "new york/new jersey (east rutherford)": [
+      "new york",
+      "bronx",
+      "new jersey",
+      "east rutherford",
+    ],
+
     "new york / new jersey": [
       "new york",
       "bronx",
@@ -442,9 +449,26 @@ function getCitySearchValues(city) {
 
     "miami gardens": ["miami"],
 
+    "miami (miami gardens)": [
+      "miami",
+      "miami gardens",
+    ],
+
     inglewood: ["los angeles"],
 
+    "los angeles (inglewood)": [
+      "los angeles",
+      "inglewood",
+    ],
+
     boston: [
+      "foxborough",
+      "foxborough stadium",
+      "gillette stadium",
+    ],
+
+    "boston (foxborough)": [
+      "boston",
       "foxborough",
       "foxborough stadium",
       "gillette stadium",
@@ -466,6 +490,11 @@ function getCitySearchValues(city) {
 
     dallas: ["arlington"],
 
+    "dallas (arlington, texas)": [
+      "dallas",
+      "arlington",
+    ],
+
     "santa clara": [
       "san francisco bay area",
       "san francisco",
@@ -482,6 +511,14 @@ function getCitySearchValues(city) {
       "san francisco",
       "san jose",
       "oakland",
+    ],
+
+    "san francisco bay area (santa clara)": [
+      "san francisco bay area",
+      "san francisco",
+      "san jose",
+      "oakland",
+      "santa clara",
     ],
 
     "san jose": [

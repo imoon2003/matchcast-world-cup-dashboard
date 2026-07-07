@@ -295,11 +295,10 @@ function App() {
       const data = await fetchFanEvents(filters);
 
       if (filters.city && data.events.length === 0) {
-        const fallbackData = await fetchFanEvents();
 
-        setFanEvents(fallbackData.events);
+        setFanEvents([]);
         setFanEventsContext(
-          `No verified local fan events found for ${filters.city}. Featured World Cup events are shown below.`
+          `No verified local fan events found for ${filters.city}.`
         );
 
         return;
@@ -426,9 +425,8 @@ function App() {
      setFanEventsContext
   ] = useState("");
 
-  const fanEventCity = selectedMatch
-    ? getFanEventCityFromMatch(selectedMatch)
-    : "";
+  const fanEventCity =
+    selectedMatch?.fanFestivalCity || selectedMatch?.city || null;
 
   const fanEventsTitle =
     selectedMatch && fanEventCity

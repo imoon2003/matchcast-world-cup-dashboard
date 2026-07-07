@@ -17,12 +17,15 @@ const LIVE_STATUS_CODES = new Set([
   "BT",
   "P",
   "LIVE",
+  "IN_PLAY",
+  "PAUSED",
 ]);
 
 const FINISHED_STATUS_CODES = new Set([
   "FT",
   "AET",
   "PEN",
+  "FINISHED",
 ]);
 
 const CARD_IMAGES = [
@@ -80,7 +83,9 @@ function getFixtureDateKey(fixture) {
 }
 
 function getDisplayStatus(fixture) {
-  const statusCode = fixture.status?.short;
+  const statusCode = String(
+    fixture.status?.short || ""
+  ).toUpperCase();
 
   if (LIVE_STATUS_CODES.has(statusCode)) {
     return "Live";
@@ -173,7 +178,7 @@ function getScoreText(fixture, status) {
   }
 
   if (status === "Final") {
-    return score;;
+    return score;
   }
 
   return score;
@@ -245,6 +250,24 @@ const AFRICAN_TEAMS = new Set([
   "tunisia",
 ]);
 
+
+function getFanFestivalCity(city) {
+  const value = String(city || "");
+
+  const cityAliases = {
+    "Boston (Foxborough)": "Boston",
+    "Los Angeles (Inglewood)": "Los Angeles",
+    "Miami (Miami Gardens)": "Miami",
+    "Dallas (Arlington, Texas)": "Dallas",
+    "New York/New Jersey (East Rutherford)": "New York/New Jersey",
+    "San Francisco Bay Area (Santa Clara)": "San Francisco Bay Area",
+    "Guadalajara (Zapopan)": "Guadalajara",
+    "Monterrey (Guadalupe)": "Monterrey",
+  };
+
+  return cityAliases[value] || value.replace(/\s*\([^)]*\)/g, "").trim();
+}
+
 function transformFixture(fixture, index) {
   const status = getDisplayStatus(fixture);
 
@@ -279,6 +302,8 @@ function transformFixture(fixture, index) {
   const city =
     fixture.venue?.city || "Venue TBD";
 
+  const fanFestivalCity = getFanFestivalCity(city);
+
   const venue =
     fixture.venue?.name || "Venue TBD";
 
@@ -287,8 +312,14 @@ function transformFixture(fixture, index) {
     fixture.round ||
     "World Cup 2026";
 
-  const groupLabel = fixture.group
-    ? `Group ${fixture.group}`
+  const groupCode =
+    fixture.stageCode === "group" &&
+    /^[A-L]$/i.test(String(fixture.group || ""))
+      ? String(fixture.group).toUpperCase()
+      : null;
+
+  const groupLabel = groupCode
+    ? `Group ${groupCode}`
     : stage;
 
   const teamCodes = [
@@ -328,6 +359,7 @@ function transformFixture(fixture, index) {
     category: "Matchday",
 
     city,
+    fanFestivalCity,
     status,
 
     isUSMatch,
@@ -365,7 +397,7 @@ function transformFixture(fixture, index) {
     ),
 
     dataLabel: fixture.liveDataAvailable
-      ? "API-Football data"
+      ? "football-data.org data"
       : "Published schedule",
 
     image:
@@ -384,8 +416,8 @@ function transformFixture(fixture, index) {
       "WorldCup2026",
       "Matchday",
 
-      fixture.group
-        ? `Group${fixture.group}`
+      groupCode
+        ? `Group${groupCode}`
         : cleanTag(stage),
 
       cleanTag(homeTeam),
@@ -654,17 +686,7 @@ async function fetchRealMatchCastData() {
    * upcoming when the Free API plan cannot backfill
    * results older than yesterday.
    */
-  const relevantFixtures =
-    payload.data.filter((fixture) => {
-      const fixtureDate =
-        getFixtureDateKey(fixture);
-
-      return (
-        fixture.liveDataAvailable ||
-        (fixtureDate &&
-          fixtureDate >= today)
-      );
-    });
+  const relevantFixtures = payload.data;
 
   const transformedMatches =
     relevantFixtures.map(

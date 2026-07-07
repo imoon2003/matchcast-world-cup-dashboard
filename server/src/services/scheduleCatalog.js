@@ -139,9 +139,11 @@ function normalizeCatalogMatch(match) {
     stage: normalizeStage(match.type),
 
     group:
+      match.type === "group" &&
       match.group &&
-      match.group !== "null"
-        ? match.group
+      match.group !== "null" &&
+      /^[A-L]$/i.test(String(match.group))
+        ? String(match.group).toUpperCase()
         : null,
 
     matchday: Number(match.matchday) || null,
@@ -279,11 +281,118 @@ function createFixtureKey(homeTeamName, awayTeamName) {
   ].join("::");
 }
 
+function formatDateKey(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getCatalogDateKey(match) {
+  if (!match.localDate) {
+    return null;
+  }
+
+  const [datePart] = match.localDate.split(" ");
+  const [month, day, year] = datePart.split("/");
+
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function getApiDateKey(fixture) {
+  if (!fixture.date) {
+    return null;
+  }
+
+  return formatDateKey(new Date(fixture.date));
+}
+
+function applyApiFixtureToCatalogMatch(catalogMatch, apiFixture) {
+  return {
+    ...catalogMatch,
+
+    apiFixtureId: apiFixture.id,
+
+    date: apiFixture.date,
+    timestamp: apiFixture.timestamp,
+    timezone: apiFixture.timezone,
+
+    homeTeam: {
+      ...catalogMatch.homeTeam,
+      apiId: apiFixture.homeTeam?.id || null,
+      name:
+        apiFixture.homeTeam?.name ||
+        catalogMatch.homeTeam.name,
+      code:
+        apiFixture.homeTeam?.code ||
+        catalogMatch.homeTeam.code,
+      logo:
+        apiFixture.homeTeam?.logo ||
+        apiFixture.homeTeam?.flag ||
+        null,
+      flag:
+        apiFixture.homeTeam?.flag ||
+        apiFixture.homeTeam?.logo ||
+        catalogMatch.homeTeam.flag ||
+        null,
+      winner:
+        apiFixture.homeTeam?.winner ?? null,
+      confirmed: true,
+    },
+
+    awayTeam: {
+      ...catalogMatch.awayTeam,
+      apiId: apiFixture.awayTeam?.id || null,
+      name:
+        apiFixture.awayTeam?.name ||
+        catalogMatch.awayTeam.name,
+      code:
+        apiFixture.awayTeam?.code ||
+        catalogMatch.awayTeam.code,
+      logo:
+        apiFixture.awayTeam?.logo ||
+        apiFixture.awayTeam?.flag ||
+        null,
+      flag:
+        apiFixture.awayTeam?.flag ||
+        apiFixture.awayTeam?.logo ||
+        catalogMatch.awayTeam.flag ||
+        null,
+      winner:
+        apiFixture.awayTeam?.winner ?? null,
+      confirmed: true,
+    },
+
+    // Keep catalog venue/city for fan festival matching.
+    venue: {
+      ...catalogMatch.venue,
+    },
+
+    status: apiFixture.status,
+    goals: apiFixture.goals,
+    score: apiFixture.score,
+
+    dataSource:
+      "football-data.org + schedule catalog",
+
+    liveDataAvailable: true,
+  };
+}
+
 export function mergeScheduleWithApiFixtures(
   catalogMatches,
   apiFixtures
 ) {
   const fixtureByTeams = new Map();
+  const usedFixtureIds = new Set();
 
   apiFixtures.forEach((fixture) => {
     const key = createFixtureKey(
@@ -295,67 +404,39 @@ export function mergeScheduleWithApiFixtures(
   });
 
   return catalogMatches.map((catalogMatch) => {
-    const key = createFixtureKey(
+    const teamKey = createFixtureKey(
       catalogMatch.homeTeam?.name,
       catalogMatch.awayTeam?.name
     );
 
-    const apiFixture = fixtureByTeams.get(key);
+    let apiFixture = fixtureByTeams.get(teamKey);
+
+    // Knockout catalog rows often say "Winner Match..." instead of real teams.
+    // If team matching fails, fall back to stage + date.
+    if (!apiFixture) {
+      const catalogDateKey = getCatalogDateKey(catalogMatch);
+
+      apiFixture = apiFixtures.find((fixture) => {
+        if (usedFixtureIds.has(fixture.id)) {
+          return false;
+        }
+
+        return (
+          fixture.stageCode === catalogMatch.stageCode &&
+          getApiDateKey(fixture) === catalogDateKey
+        );
+      });
+    }
 
     if (!apiFixture) {
       return catalogMatch;
     }
 
-    return {
-      ...catalogMatch,
+    usedFixtureIds.add(apiFixture.id);
 
-      apiFixtureId: apiFixture.id,
-
-      date: apiFixture.date,
-      timestamp: apiFixture.timestamp,
-      timezone: apiFixture.timezone,
-
-      homeTeam: {
-        ...catalogMatch.homeTeam,
-        apiId: apiFixture.homeTeam?.id || null,
-        name:
-          apiFixture.homeTeam?.name ||
-          catalogMatch.homeTeam.name,
-        logo: apiFixture.homeTeam?.logo || null,
-        winner:
-          apiFixture.homeTeam?.winner ?? null,
-      },
-
-      awayTeam: {
-        ...catalogMatch.awayTeam,
-        apiId: apiFixture.awayTeam?.id || null,
-        name:
-          apiFixture.awayTeam?.name ||
-          catalogMatch.awayTeam.name,
-        logo: apiFixture.awayTeam?.logo || null,
-        winner:
-          apiFixture.awayTeam?.winner ?? null,
-      },
-
-      venue: {
-        ...catalogMatch.venue,
-        apiId: apiFixture.venue?.id || null,
-        name:
-          apiFixture.venue?.name ||
-          catalogMatch.venue.name,
-        city:
-          apiFixture.venue?.city ||
-          catalogMatch.venue.city,
-      },
-
-      status: apiFixture.status,
-      goals: apiFixture.goals,
-      score: apiFixture.score,
-
-      dataSource:
-        "API-Football + schedule catalog",
-
-      liveDataAvailable: true,
-    };
+    return applyApiFixtureToCatalogMatch(
+      catalogMatch,
+      apiFixture
+    );
   });
 }

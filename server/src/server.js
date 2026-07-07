@@ -42,14 +42,14 @@ const app = express();
 
 const port = Number(process.env.PORT) || 5050;
 
-const apiKey = process.env.API_FOOTBALL_KEY;
+const footballDataKey = process.env.FOOTBALL_DATA_KEY;
 
-const apiBaseUrl =
-  process.env.API_FOOTBALL_BASE_URL ||
-  "https://v3.football.api-sports.io";
+const footballDataBaseUrl =
+  process.env.FOOTBALL_DATA_BASE_URL ||
+  "https://api.football-data.org/v4";
 
-const WORLD_CUP_LEAGUE_ID = 1;
-const WORLD_CUP_SEASON = 2026;
+const WORLD_CUP_SEASON =
+  Number(process.env.WORLD_CUP_SEASON) || 2026;
 
 // Keep each API response for 15 minutes.
 const CACHE_DURATION = 15 * 60 * 1000;
@@ -96,34 +96,80 @@ function getAllowedDates() {
   };
 }
 
-function hasApiErrors(errors) {
-  if (Array.isArray(errors)) {
-    return errors.length > 0;
-  }
+function formatFootballDataStage(stage) {
+  const stageLabels = {
+    GROUP_STAGE: "Group Stage",
+    LAST_32: "Round of 32",
+    LAST_16: "Round of 16",
+    ROUND_OF_16: "Round of 16",
+    QUARTER_FINALS: "Quarterfinal",
+    SEMI_FINALS: "Semifinal",
+    THIRD_PLACE: "Third Place Playoff",
+    FINAL: "Final",
+  };
 
-  return Boolean(
-    errors &&
-      typeof errors === "object" &&
-      Object.keys(errors).length > 0
+  return (
+    stageLabels[stage] ||
+    String(stage || "World Cup").replace(/_/g, " ")
   );
 }
 
-async function fetchFromApiFootball(
-  endpoint,
-  parameters = {}
-) {
-  if (!apiKey) {
+function formatFootballDataGroup(group) {
+  if (!group) {
+    return null;
+  }
+
+  const match = String(group).match(/GROUP_([A-L])/);
+
+  return match ? match[1] : null;
+}
+
+function getFootballDataStageCode(stage) {
+  const stageCodes = {
+    GROUP_STAGE: "group",
+    LAST_32: "r32",
+    LAST_16: "r16",
+    ROUND_OF_16: "r16",
+    QUARTER_FINALS: "qf",
+    SEMI_FINALS: "sf",
+    THIRD_PLACE: "third",
+    FINAL: "final",
+  };
+
+  return stageCodes[stage] || "knockout";
+}
+
+function normalizeFootballDataStatus(status) {
+  const statusLabels = {
+    TIMED: "Scheduled",
+    SCHEDULED: "Scheduled",
+    LIVE: "Live",
+    IN_PLAY: "Live",
+    PAUSED: "Halftime",
+    FINISHED: "Full Time",
+    POSTPONED: "Postponed",
+    SUSPENDED: "Suspended",
+    CANCELED: "Canceled",
+  };
+
+  return {
+    long: statusLabels[status] || status || "Scheduled",
+    short: status || "SCHEDULED",
+    elapsed: null,
+  };
+}
+
+async function fetchFromFootballData(endpoint, parameters = {}) {
+  if (!footballDataKey) {
     throw new Error(
-      "API_FOOTBALL_KEY is missing from the server environment."
+      "FOOTBALL_DATA_KEY is missing from the server environment."
     );
   }
 
-  const cleanBaseUrl = apiBaseUrl.replace(/\/$/, "");
+  const cleanBaseUrl = footballDataBaseUrl.replace(/\/$/, "");
   const cleanEndpoint = endpoint.replace(/^\//, "");
 
-  const url = new URL(
-    `${cleanBaseUrl}/${cleanEndpoint}`
-  );
+  const url = new URL(`${cleanBaseUrl}/${cleanEndpoint}`);
 
   Object.entries(parameters).forEach(([key, value]) => {
     if (
@@ -138,7 +184,7 @@ async function fetchFromApiFootball(
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
-      "x-apisports-key": apiKey,
+      "X-Auth-Token": footballDataKey,
     },
   });
 
@@ -146,7 +192,7 @@ async function fetchFromApiFootball(
 
   if (!response.ok) {
     const error = new Error(
-      `API-Football request failed with status ${response.status}.`
+      `football-data.org request failed with status ${response.status}.`
     );
 
     error.status = response.status;
@@ -155,67 +201,70 @@ async function fetchFromApiFootball(
     throw error;
   }
 
-  if (hasApiErrors(payload.errors)) {
-    const error = new Error(
-      `API-Football error: ${JSON.stringify(
-        payload.errors
-      )}`
-    );
-
-    error.status = 502;
-
-    throw error;
-  }
-
   return payload;
 }
 
 function normalizeFixture(item) {
+  const date = item.utcDate;
+  const timestamp = date
+    ? Math.floor(new Date(date).getTime() / 1000)
+    : null;
+
+  const stage = formatFootballDataStage(item.stage);
+  const group = formatFootballDataGroup(item.group);
+
   return {
-    id: item.fixture.id,
-    date: item.fixture.date,
-    timestamp: item.fixture.timestamp,
-    timezone: item.fixture.timezone,
+    id: item.id,
+    date,
+    timestamp,
+    timezone: "UTC",
 
-    status: {
-      long: item.fixture.status.long,
-      short: item.fixture.status.short,
-      elapsed: item.fixture.status.elapsed,
-    },
+    status: normalizeFootballDataStatus(item.status),
 
-    round: item.league.round,
+    round: stage,
+    stage,
+    stageCode: getFootballDataStageCode(item.stage),
+    group,
+    matchday: item.matchday,
 
     venue: {
-      id: item.fixture.venue?.id || null,
-      name: item.fixture.venue?.name || "TBD",
-      city: item.fixture.venue?.city || "TBD",
+      id: null,
+      name: "Published venue",
+      city: "TBD",
     },
 
     homeTeam: {
-      id: item.teams.home.id,
-      name: item.teams.home.name,
-      logo: item.teams.home.logo,
-      winner: item.teams.home.winner,
+      id: item.homeTeam?.id || null,
+      name: item.homeTeam?.name || "TBD",
+      code: item.homeTeam?.tla || null,
+      logo: item.homeTeam?.crest || null,
+      flag: item.homeTeam?.crest || null,
+      winner: item.score?.winner === "HOME_TEAM",
     },
 
     awayTeam: {
-      id: item.teams.away.id,
-      name: item.teams.away.name,
-      logo: item.teams.away.logo,
-      winner: item.teams.away.winner,
+      id: item.awayTeam?.id || null,
+      name: item.awayTeam?.name || "TBD",
+      code: item.awayTeam?.tla || null,
+      logo: item.awayTeam?.crest || null,
+      flag: item.awayTeam?.crest || null,
+      winner: item.score?.winner === "AWAY_TEAM",
     },
 
     goals: {
-      home: item.goals.home,
-      away: item.goals.away,
+      home: item.score?.fullTime?.home ?? null,
+      away: item.score?.fullTime?.away ?? null,
     },
 
     score: item.score,
+    dataSource: "football-data.org",
+    liveDataAvailable: true,
   };
 }
 
 async function getWorldCupFixtures(date) {
-  const cachedResult = fixtureCache.get(date);
+  const cacheKey = date || "all";
+  const cachedResult = fixtureCache.get(cacheKey);
   const currentTime = Date.now();
 
   if (
@@ -229,26 +278,26 @@ async function getWorldCupFixtures(date) {
     };
   }
 
-  const payload = await fetchFromApiFootball(
-    "fixtures",
+  const payload = await fetchFromFootballData(
+    "competitions/WC/matches",
     {
-      date,
-      timezone: "America/New_York",
+      season: WORLD_CUP_SEASON,
     }
   );
 
-  const fixtures = payload.response
-    .filter(
-      (item) =>
-        item.league?.id === WORLD_CUP_LEAGUE_ID &&
-        Number(item.league?.season) ===
-          WORLD_CUP_SEASON
-    )
-    .map(normalizeFixture);
+  const fixtures = payload.matches
+    .map(normalizeFixture)
+    .filter((fixture) => {
+      if (!date) {
+        return true;
+      }
+
+      return fixture.date?.startsWith(date);
+    });
 
   const fetchedAt = new Date().toISOString();
 
-  fixtureCache.set(date, {
+  fixtureCache.set(cacheKey, {
     data: fixtures,
     fetchedAt,
     expiresAt: currentTime + CACHE_DURATION,
@@ -264,7 +313,7 @@ async function getWorldCupFixtures(date) {
 function sendFixtureResponse(res, date, result) {
   res.json({
     success: true,
-    source: "API-Football",
+    source: "football-data.org",
     competition: "FIFA World Cup 2026",
     date,
     count: result.data.length,
@@ -355,121 +404,127 @@ app.get(
         "yesterday",
         "today",
         "tomorrow",
+        "upcoming",
         "none",
+        "all",
       ];
 
       if (!validOverlayValues.includes(overlay)) {
         return res.status(400).json({
           success: false,
           message:
-            "overlay must be yesterday, today, tomorrow, or none.",
-          allowedOverlayValues: validOverlayValues,
+            "Invalid overlay. Use yesterday, today, tomorrow, upcoming, none, or all.",
+          validOverlayValues,
         });
       }
 
-      const cacheKey = req.originalUrl;
-      const cachedResponse =
-        getCachedResponse(cacheKey);
-
-      if (cachedResponse) {
-        res.set("X-MatchCast-Cache", "HIT");
-        return res.json(cachedResponse);
-      }
-
-      const catalogSchedule =
-        getScheduleCatalog({
-          stage,
-          group,
-        });
-
-      let schedule = catalogSchedule;
-
-      let overlayInformation = {
-        enabled: false,
-        date: null,
-        cached: null,
-        fetchedAt: null,
-        matchedFixtures: 0,
-      };
-
-      if (overlay !== "none") {
-        const allowedDates =
-          getAllowedDates();
-
-        const overlayDate =
-          allowedDates[overlay];
-
-        const apiResult =
-          await getWorldCupFixtures(
-            overlayDate
-          );
-
-        schedule =
-          mergeScheduleWithApiFixtures(
-            catalogSchedule,
-            apiResult.data
-          );
-
-        const matchedFixtures =
-          schedule.filter(
-            (match) =>
-              match.liveDataAvailable
-          ).length;
-
-        overlayInformation = {
-          enabled: true,
-          period: overlay,
-          date: overlayDate,
-          cached: apiResult.cached,
-          fetchedAt: apiResult.fetchedAt,
-          apiFixturesReturned:
-            apiResult.data.length,
-          matchedFixtures,
-        };
-      }
-
-      const hasLiveMatch = schedule.some(
-        (match) => match.status === "Live"
+      const allowedDates = getAllowedDates();
+      const oneDay = 24 * 60 * 60 * 1000;
+      const upcomingEndDate = formatNewYorkDate(
+        new Date(Date.now() + 8 * oneDay)
       );
 
-      const ttlMs = hasLiveMatch
-        ? 60_000
-        : 10 * 60_000;
+      const catalogMatches = getScheduleCatalog({
+        stage,
+        group,
+      });
 
-      const payload = {
+      const result = await getWorldCupFixtures();
+
+      let schedule = mergeScheduleWithApiFixtures(
+        catalogMatches,
+        result.data
+      );
+
+      const getMatchDateKey = (match) => {
+        if (match.date) {
+          return formatNewYorkDate(new Date(match.date));
+        }
+
+        if (match.localDate) {
+          const [datePart] = match.localDate.split(" ");
+          const [month, day, year] = datePart.split("/");
+          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+
+        return null;
+      };
+
+      const hasRealTeams = (match) => {
+        const homeName = match.homeTeam?.name || "";
+        const awayName = match.awayTeam?.name || "";
+
+        return ![homeName, awayName].some((name) =>
+          /^(TBD|Winner|Loser|To be determined)/i.test(name)
+        );
+      };
+
+      schedule = schedule.filter(hasRealTeams);
+
+      if (overlay === "yesterday") {
+        schedule = schedule.filter(
+          (match) =>
+            getMatchDateKey(match) === allowedDates.yesterday
+        );
+      }
+
+      if (overlay === "tomorrow") {
+        schedule = schedule.filter(
+          (match) =>
+            getMatchDateKey(match) === allowedDates.tomorrow
+        );
+      }
+
+      if (overlay === "today" || overlay === "upcoming") {
+        schedule = schedule.filter((match) => {
+          const matchDate = getMatchDateKey(match);
+
+          return (
+            matchDate &&
+            matchDate >= allowedDates.today &&
+            matchDate <= upcomingEndDate
+          );
+        });
+      }
+
+      schedule = schedule
+        .sort((a, b) => {
+          const first = a.date
+            ? new Date(a.date).getTime()
+            : a.catalogId || 9999;
+
+          const second = b.date
+            ? new Date(b.date).getTime()
+            : b.catalogId || 9999;
+
+          return first - second;
+        })
+        .slice(0, 12);
+
+      res.json({
         success: true,
-
-        competition:
-          "FIFA World Cup 2026",
-
-        source:
-          overlay === "none"
-            ? "Local published-schedule catalog"
-            : "Schedule catalog with API-Football overlay",
-
+        competition: "FIFA World Cup 2026",
+        source: "football-data.org + schedule catalog",
         filters: {
           stage: stage || null,
           group: group || null,
           overlay,
         },
-
-        overlay: overlayInformation,
-
-        metadata:
-          getScheduleMetadata(),
-
+        overlay: {
+          enabled: overlay !== "none" && overlay !== "all",
+          period: overlay,
+          date: allowedDates.today,
+          cached: result.cached,
+          fetchedAt: result.fetchedAt,
+          apiFixturesReturned: result.data.length,
+          matchedFixtures: schedule.filter(
+            (match) => match.liveDataAvailable
+          ).length,
+        },
+        metadata: getScheduleMetadata(),
         count: schedule.length,
         data: schedule,
-      };
-
-      setCachedResponse(
-        cacheKey,
-        payload,
-        ttlMs
-      );
-
-      res.set("X-MatchCast-Cache", "MISS");
-      return res.json(payload);
+      });
     } catch (error) {
       next(error);
     }
