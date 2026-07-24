@@ -699,7 +699,7 @@ input:focus-visible,
 }
 
 .ticker {
-  margin: 24px 0;
+  margin: 24px 0 0;
   border-radius: 24px;
   padding: 16px;
   display: grid;
@@ -730,6 +730,254 @@ input:focus-visible,
   white-space: nowrap;
   position: relative;
   z-index: 2;
+}
+
+.podium-section {
+  margin: 26px 0 34px;
+}
+
+.champion-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 28px 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 223, 90, 0.14),
+    rgba(255, 255, 255, 0.04)
+  );
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.champion-kicker {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f4c542;
+}
+
+.champion-mainline {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.champion-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 20px;
+  text-align: left;
+}
+
+.champion-country {
+  margin: 0;
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+  font-size: clamp(2.1rem, 4vw, 3.35rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-align: left;
+  text-transform: uppercase;
+  text-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.24);
+}
+
+.champion-trophy {
+  flex: 0 0 auto;
+  font-size: clamp(1.7rem, 2.5vw, 2.3rem);
+  line-height: 1;
+  filter: drop-shadow(
+    0 4px 8px rgba(216, 173, 63, 0.16)
+  );
+}
+
+.champion-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+
+  margin: 0 0 24px;
+  padding: 9px 16px;
+
+  border: 1px solid rgba(216, 173, 63, 0.5);
+  border-radius: 999px;
+  background: rgba(216, 173, 63, 0.14);
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.14),
+    0 0 18px rgba(216, 173, 63, 0.12);
+
+  font-family: inherit;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  color: #d8ad3f;
+  text-shadow: none;
+}
+
+.podium-logo-frame--champion {
+  width: 250px;
+  height: 160px;
+  flex: 0 0 250px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.podium-logo-frame {
+  display: flex;
+  width: 88px;
+  height: 62px;
+  flex: 0 0 88px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.podium-team-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
+.podium-team-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.4rem;
+}
+
+.podium-placements {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.placement-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+  min-height: 180px;
+}
+
+.placement-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.placement-medal {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.placement-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.placement-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.68;
+}
+
+.placement-country {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .podium-placements {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .champion-card {
+    min-height: 260px;
+    padding: 30px 18px;
+  }
+
+  .champion-country {
+    font-size: clamp(1.7rem, 7vw, 2.35rem);
+    letter-spacing: 0.04em;
+  }
+
+  .champion-trophy {
+    font-size: 1.65rem;
+  }
+
+  .podium-logo-frame--champion {
+    width: 155px;
+    height: 100px;
+    flex-basis: 155px;
+  }
+
+  .champion-label {
+    margin-bottom: 20px;
+    padding: 8px 13px;
+    font-size: 0.9rem;
+  }
+
+  .champion-mainline {
+    gap: 18px;
+  }
+
+  .champion-identity {
+    gap: 10px;
+  }
+
+  .podium-logo-frame {
+    width: 82px;
+    height: 58px;
+    flex-basis: 82px;
+  }
 }
 
 .live-dot {
@@ -768,6 +1016,7 @@ input:focus-visible,
   grid-template-columns: minmax(0, 1fr) 330px;
   gap: 22px;
   align-items: start;
+  margin-top: 24px;
 }
 
 .main-panel {

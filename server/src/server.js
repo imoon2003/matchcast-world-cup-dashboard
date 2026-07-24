@@ -487,19 +487,33 @@ app.get(
         });
       }
 
-      schedule = schedule
-        .sort((a, b) => {
-          const first = a.date
-            ? new Date(a.date).getTime()
-            : a.catalogId || 9999;
+      schedule = schedule.sort((a, b) => {
+        const firstDate =
+          getMatchDateKey(a) || "0000-00-00";
 
-          const second = b.date
-            ? new Date(b.date).getTime()
-            : b.catalogId || 9999;
+        const secondDate =
+          getMatchDateKey(b) || "0000-00-00";
 
-          return first - second;
-        })
-        .slice(0, 12);
+        if (firstDate !== secondDate) {
+          return overlay === "all"
+            ? secondDate.localeCompare(firstDate)
+            : firstDate.localeCompare(secondDate);
+        }
+
+        const firstCatalogId =
+          Number(a.catalogId) || 0;
+
+        const secondCatalogId =
+          Number(b.catalogId) || 0;
+
+        return overlay === "all"
+          ? secondCatalogId - firstCatalogId
+          : firstCatalogId - secondCatalogId;
+      });
+
+      if (overlay !== "all") {
+        schedule = schedule.slice(0, 12);
+      }
 
       res.json({
         success: true,
