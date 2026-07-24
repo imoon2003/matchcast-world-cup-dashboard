@@ -2,7 +2,7 @@
 
 *Built and maintained by **Iman Ahmed** as a full-stack software engineering portfolio project.*
 
-**Status:** Full-stack v2 deployed with live match data integration.
+**Status:** Full-stack v2 deployed with live match data integration and a tournament-complete results experience.
 
 **Live Demo:** https://matchcast-world-cup-dashboard.vercel.app
 
@@ -11,6 +11,8 @@
 MatchCast is a World Cup coverage dashboard built to model how a live sports media or event-operations team could monitor match windows, tournament signals, host-city activity, fan events, and live score updates from one command view.
 
 The project combines a polished React/Vite frontend with a deployed Node/Express backend. It uses football-data.org match data, a curated World Cup schedule catalog, verified fan-event data, host-city alias matching, fallback schedule logic, and backend-side response caching to create a more realistic full-stack sports dashboard experience.
+
+When the tournament is complete, MatchCast automatically transitions from active coverage modules to a dedicated podium view. The dashboard identifies the final and third-place matches, determines each placement from the match results, and displays the champion, runner-up, third-place team, and fourth-place team in a responsive results layout.
 
 ![MatchCast Dashboard Overview](screenshots/01-dashboard-overview.png)
 
@@ -41,6 +43,10 @@ The app is designed to stay usable even when external data is incomplete. Live m
 * Keyboard-accessible match cards with visible focus states
 * Mobile-responsive layout with stacked sections for smaller screens
 * Environment-controlled system status panel for local development notes
+* Tournament-complete podium with champion and placement results
+* Automatic final and third-place match detection
+*  Dynamic placement calculation using winner data and match scores
+*  Responsive team-flag and tournament-results presentation
 
 ## Screenshots
 
@@ -106,6 +112,7 @@ matchcast-world-cup-dashboard/
 │   │   ├── Hero.jsx
 │   │   ├── LoadingState.jsx
 │   │   ├── MatchCard.jsx
+│   │   ├── PodiumSection.jsx
 │   │   ├── SpotlightCard.jsx
 │   │   ├── SystemStatus.jsx
 │   │   ├── Ticker.jsx
@@ -120,6 +127,18 @@ matchcast-world-cup-dashboard/
 ```
 
 ## Tech Decisions
+
+### Tournament Results Experience
+
+The tournament-complete view includes:
+
+* Automatic detection of final and third-place matches
+* Champion, runner-up, third-place, and fourth-place calculations
+* Team flags pulled from match data
+* A featured champion card with trophy styling
+* Separate placement cards for the remaining finalists
+* Responsive desktop and mobile layouts
+* Graceful fallback text when complete result data is unavailable
 
 ### Live Data Provider
 

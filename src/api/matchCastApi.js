@@ -95,6 +95,16 @@ function getDisplayStatus(fixture) {
     return "Final";
   }
 
+  const fixtureDate =
+    getFixtureDateKey(fixture);
+
+  if (
+    fixtureDate &&
+    fixtureDate < getTodayDateKey()
+  ) {
+    return "Final";
+  }
+
   return "Upcoming";
 }
 
@@ -168,7 +178,9 @@ function getScoreText(fixture, status) {
     Number.isFinite(awayGoals);
 
   if (!hasScore) {
-    return "Scheduled";
+    return status === "Final"
+      ? "Result unavailable"
+      : "Scheduled";
   }
 
   const score = `${homeGoals}–${awayGoals}`;
@@ -622,32 +634,43 @@ function sortDashboardMatches(
     Number.isFinite(firstTimestamp) &&
     Number.isFinite(secondTimestamp)
   ) {
-    return firstTimestamp - secondTimestamp;
+    return firstMatch.status === "Final"
+      ? secondTimestamp - firstTimestamp
+      : firstTimestamp - secondTimestamp;
   }
 
   const firstDate =
     getFixtureDateKey(firstMatch.apiData) ||
-    "9999-12-31";
+    "0000-00-00";
 
   const secondDate =
     getFixtureDateKey(secondMatch.apiData) ||
-    "9999-12-31";
+    "0000-00-00";
 
   if (firstDate !== secondDate) {
-    return firstDate.localeCompare(
-      secondDate
-    );
+    return firstMatch.status === "Final"
+      ? secondDate.localeCompare(firstDate)
+      : firstDate.localeCompare(secondDate);
   }
 
-  return (
-    Number(firstMatch.apiData?.catalogId) -
-    Number(secondMatch.apiData?.catalogId)
-  );
+  const firstCatalogId =
+    Number(
+      firstMatch.apiData?.catalogId
+    ) || 0;
+
+  const secondCatalogId =
+    Number(
+      secondMatch.apiData?.catalogId
+    ) || 0;
+
+  return firstMatch.status === "Final"
+    ? secondCatalogId - firstCatalogId
+    : firstCatalogId - secondCatalogId;
 }
 
 async function fetchRealMatchCastData() {
   const response = await fetch(
-    `${API_BASE_URL}/api/world-cup/schedule?overlay=today`
+    `${API_BASE_URL}/api/world-cup/schedule?overlay=all`
   );
 
   if (!response.ok) {

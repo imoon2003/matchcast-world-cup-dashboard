@@ -10,6 +10,7 @@ import FanEvents from "./components/FanEvents";
 import Hero from "./components/Hero";
 import LoadingState from "./components/LoadingState";
 import MatchCard from "./components/MatchCard";
+import PodiumSection from "./components/PodiumSection";
 import SpotlightCard from "./components/SpotlightCard";
 import SystemStatus from "./components/SystemStatus";
 import Ticker from "./components/Ticker";
@@ -24,10 +25,10 @@ import "./App.css";
 
 const CATEGORIES = [
   "All",
+  "Finalists",
   "Today",
   "Live",
   "Upcoming",
-  "Final",
   "US Matches",
   "African",
   "Arab",
@@ -72,6 +73,27 @@ function getMatchDateKey(match) {
   return `${year}-${month}-${day}`;
 }
 
+function isFinalistsMatch(match) {
+  const stageCode = String(
+    match.apiData?.stageCode || ""
+  ).toLowerCase();
+
+  const stageName = String(
+    match.apiData?.stage ||
+    match.apiData?.round ||
+    ""
+  )
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+
+  return (
+    stageCode === "final" ||
+    stageCode === "third" ||
+    stageName === "final" ||
+    stageName.includes("thirdplace")
+  );
+}
+
 function matchesCategoryFilter(
   match,
   selectedCategory,
@@ -80,6 +102,9 @@ function matchesCategoryFilter(
   switch (selectedCategory) {
     case "All":
       return true;
+
+    case "Finalists":
+      return isFinalistsMatch(match);
 
     case "Today":
       return getMatchDateKey(match) === today;
@@ -452,6 +477,26 @@ function App() {
     setSelectedCategory(category);
     setSearchTerm("");
     setSelectedTopic("");
+
+    if (category === "Finalists") {
+      const championshipFinal =
+        coverageModules.find(
+          (match) =>
+            String(
+              match.apiData?.stageCode || ""
+            ).toLowerCase() === "final"
+        );
+
+      const placementMatch =
+        championshipFinal ||
+        coverageModules.find(
+          isFinalistsMatch
+        );
+
+      if (placementMatch) {
+        setSelectedMatch(placementMatch);
+      }
+    }
   }
 
   function handleTopicSelect(topic) {
@@ -513,6 +558,11 @@ function App() {
       <Ticker
         matches={tickerMatches}
         mode={tickerMode}
+        onSelectMatch={setSelectedMatch}
+      />
+
+      <PodiumSection
+        matches={coverageModules}
         onSelectMatch={setSelectedMatch}
       />
 
