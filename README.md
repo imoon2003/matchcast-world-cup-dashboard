@@ -62,6 +62,10 @@ The app is designed to stay usable even when external data is incomplete. Live m
 
 ![Filtered Coverage Signals](screenshots/03-filtered-signals.png)
 
+### Live Match Strip
+
+![MatchCast live match strip showing recent tournament scores and match statuses](screenshots/05-live-match-strip.png)
+
 ### Mobile Responsive View
 
 ![Mobile Responsive View](screenshots/04-mobile-responsive.png)
@@ -91,7 +95,8 @@ matchcast-world-cup-dashboard/
 │   ├── 01-dashboard-overview.png
 │   ├── 02-coverage-feed.png
 │   ├── 03-filtered-signals.png
-│   └── 04-mobile-responsive.png
+│   ├── 04-mobile-responsive.png
+│   └── 05-live-match-strip.png
 ├── server/
 │   └── src/
 │       ├── services/
