@@ -25,10 +25,10 @@ import "./App.css";
 
 const CATEGORIES = [
   "All",
-  "Finalists",
   "Today",
   "Live",
   "Upcoming",
+  "Final",
   "US Matches",
   "African",
   "Arab",
@@ -73,27 +73,6 @@ function getMatchDateKey(match) {
   return `${year}-${month}-${day}`;
 }
 
-function isFinalistsMatch(match) {
-  const stageCode = String(
-    match.apiData?.stageCode || ""
-  ).toLowerCase();
-
-  const stageName = String(
-    match.apiData?.stage ||
-    match.apiData?.round ||
-    ""
-  )
-    .toLowerCase()
-    .replace(/[^a-z]/g, "");
-
-  return (
-    stageCode === "final" ||
-    stageCode === "third" ||
-    stageName === "final" ||
-    stageName.includes("thirdplace")
-  );
-}
-
 function matchesCategoryFilter(
   match,
   selectedCategory,
@@ -102,9 +81,6 @@ function matchesCategoryFilter(
   switch (selectedCategory) {
     case "All":
       return true;
-
-    case "Finalists":
-      return isFinalistsMatch(match);
 
     case "Today":
       return getMatchDateKey(match) === today;
@@ -236,19 +212,35 @@ function App() {
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    loadCoverageFeed({
-      showLoading: true,
-      resetSelectedMatch: true,
-    });
+    let isCancelled = false;
+    let loadingTimer;
 
-    const refreshInterval = setInterval(() => {
-      loadCoverageFeed({
+    async function initializeCoverageFeed() {
+      const startTime = performance.now();
+
+      setIsLoading(true);
+
+      await loadCoverageFeed({
         showLoading: false,
-        resetSelectedMatch: false,
+        resetSelectedMatch: true,
       });
-    }, 60000);
 
-    return () => clearInterval(refreshInterval);
+      const elapsedTime = performance.now() - startTime;
+      const remainingTime = Math.max(0, 1200 - elapsedTime);
+
+      loadingTimer = setTimeout(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }, remainingTime);
+    }
+
+    initializeCoverageFeed();
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(loadingTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -477,26 +469,6 @@ function App() {
     setSelectedCategory(category);
     setSearchTerm("");
     setSelectedTopic("");
-
-    if (category === "Finalists") {
-      const championshipFinal =
-        coverageModules.find(
-          (match) =>
-            String(
-              match.apiData?.stageCode || ""
-            ).toLowerCase() === "final"
-        );
-
-      const placementMatch =
-        championshipFinal ||
-        coverageModules.find(
-          isFinalistsMatch
-        );
-
-      if (placementMatch) {
-        setSelectedMatch(placementMatch);
-      }
-    }
   }
 
   function handleTopicSelect(topic) {
@@ -558,11 +530,6 @@ function App() {
       <Ticker
         matches={tickerMatches}
         mode={tickerMode}
-        onSelectMatch={setSelectedMatch}
-      />
-
-      <PodiumSection
-        matches={coverageModules}
         onSelectMatch={setSelectedMatch}
       />
 
