@@ -1,32 +1,17 @@
 import {
-  fetchMatchCastData as fetchMockMatchCastData,
-} from "./mockSportsApi";
+  ARCHIVE_METADATA,
+  FINAL_TOURNAMENT_FIXTURES,
+} from "../data/finalTournamentData.js";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5050";
+import { FAN_EVENTS } from "../data/fanEvents.js";
 
-const USE_MOCK_FALLBACK =
-  import.meta.env.VITE_USE_MOCK_FALLBACK !== "false";
+const DATA_MODE =
+  import.meta.env.VITE_DATA_MODE || "static";
 
-const LIVE_STATUS_CODES = new Set([
-  "1H",
-  "HT",
-  "2H",
-  "ET",
-  "BT",
-  "P",
-  "LIVE",
-  "IN_PLAY",
-  "PAUSED",
-]);
+const IS_STATIC_MODE =
+  DATA_MODE === "static";
 
-const FINISHED_STATUS_CODES = new Set([
-  "FT",
-  "AET",
-  "PEN",
-  "FINISHED",
-]);
+const ARCHIVE_FAN_SIGNALS = [98, 94, 95, 95, 91, 90, 90, 89, 86, 87, 88, 86];
 
 const CARD_IMAGES = [
   "/images/stadium-night.jpg",
@@ -34,205 +19,6 @@ const CARD_IMAGES = [
   "/images/pitch-aerial.jpg",
   "/images/stadium-lights.jpg",
 ];
-
-function cleanTag(value = "") {
-  return String(value).replace(
-    /[^a-zA-Z0-9]/g,
-    ""
-  );
-}
-
-
-
-function getTodayDateKey() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-
-  const values = Object.fromEntries(
-    parts.map(({ type, value }) => [
-      type,
-      value,
-    ])
-  );
-
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function getFixtureDateKey(fixture) {
-  if (fixture.date) {
-    return fixture.date.slice(0, 10);
-  }
-
-  const catalogDate = String(
-    fixture.localDate || ""
-  ).match(
-    /^(\d{2})\/(\d{2})\/(\d{4})/
-  );
-
-  if (!catalogDate) {
-    return null;
-  }
-
-  const [, month, day, year] = catalogDate;
-
-  return `${year}-${month}-${day}`;
-}
-
-function getDisplayStatus(fixture) {
-  const statusCode = String(
-    fixture.status?.short || ""
-  ).toUpperCase();
-
-  if (LIVE_STATUS_CODES.has(statusCode)) {
-    return "Live";
-  }
-
-  if (FINISHED_STATUS_CODES.has(statusCode)) {
-    return "Final";
-  }
-
-  const fixtureDate =
-    getFixtureDateKey(fixture);
-
-  if (
-    fixtureDate &&
-    fixtureDate < getTodayDateKey()
-  ) {
-    return "Final";
-  }
-
-  return "Upcoming";
-}
-
-function formatApiKickoff(dateString) {
-  if (!dateString) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-    timeZoneName: "short",
-  }).format(new Date(dateString));
-}
-
-function formatCatalogKickoff(localDate) {
-  const match = String(localDate || "").match(
-    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/
-  );
-
-  if (!match) {
-    return "Kickoff TBD";
-  }
-
-  const [
-    ,
-    month,
-    day,
-    year,
-    hour,
-    minute,
-  ] = match;
-
-  /*
-   * UTC is used here only to format the supplied
-   * venue-local components without shifting them.
-   */
-  const displayDate = new Date(
-    Date.UTC(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-      Number(hour),
-      Number(minute)
-    )
-  );
-
-  const formatted = new Intl.DateTimeFormat(
-    "en-US",
-    {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "UTC",
-    }
-  ).format(displayDate);
-
-  return `${formatted} venue time`;
-}
-
-function getScoreText(fixture, status) {
-  const homeGoals = fixture.goals?.home;
-  const awayGoals = fixture.goals?.away;
-
-  const hasScore =
-    Number.isFinite(homeGoals) &&
-    Number.isFinite(awayGoals);
-
-  if (!hasScore) {
-    return status === "Final"
-      ? "Result unavailable"
-      : "Scheduled";
-  }
-
-  const score = `${homeGoals}–${awayGoals}`;
-
-  if (status === "Live") {
-    return score;
-  }
-
-  if (status === "Final") {
-    return score;
-  }
-
-  return score;
-}
-
-function getMatchProgress(fixture, status) {
-  if (status === "Final") {
-    return 100;
-  }
-
-  if (status === "Live") {
-    return Math.min(
-      Math.max(
-        Number(fixture.status?.elapsed) || 1,
-        1
-      ),
-      99
-    );
-  }
-
-  return 0;
-}
-
-function getPriority(status) {
-  if (status === "Live") {
-    return "High";
-  }
-
-  if (status === "Upcoming") {
-    return "Medium";
-  }
-
-  return "Low";
-}
-
-function normalizeTeamName(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
 
 const ARAB_TEAMS = new Set([
   "algeria",
@@ -262,561 +48,300 @@ const AFRICAN_TEAMS = new Set([
   "tunisia",
 ]);
 
+function cleanTag(value = "") {
+  return String(value).replace(/[^a-zA-Z0-9]/g, "");
+}
+
+function normalizeTeamName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
 
 function getFanFestivalCity(city) {
-  const value = String(city || "");
-
-  const cityAliases = {
+  const aliases = {
     "Boston (Foxborough)": "Boston",
     "Los Angeles (Inglewood)": "Los Angeles",
     "Miami (Miami Gardens)": "Miami",
     "Dallas (Arlington, Texas)": "Dallas",
-    "New York/New Jersey (East Rutherford)": "New York/New Jersey",
+    "New York/New Jersey (East Rutherford)": "New York",
     "San Francisco Bay Area (Santa Clara)": "San Francisco Bay Area",
-    "Guadalajara (Zapopan)": "Guadalajara",
-    "Monterrey (Guadalupe)": "Monterrey",
   };
 
-  return cityAliases[value] || value.replace(/\s*\([^)]*\)/g, "").trim();
+  return aliases[city] || String(city || "").replace(/\s*\([^)]*\)/g, "").trim();
+}
+
+function formatKickoff(dateString) {
+  if (!dateString) {
+    return "Tournament complete";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+  }).format(new Date(dateString));
+}
+
+function getScoreText(fixture) {
+  const homeGoals = fixture.goals?.home;
+  const awayGoals = fixture.goals?.away;
+
+  if (!Number.isFinite(homeGoals) || !Number.isFinite(awayGoals)) {
+    return "Result unavailable";
+  }
+
+  const baseScore = `${homeGoals}–${awayGoals}`;
+  const penalties = fixture.score?.penalties;
+
+  if (
+    Number.isFinite(penalties?.home) &&
+    Number.isFinite(penalties?.away)
+  ) {
+    return `${baseScore} (${penalties.home}–${penalties.away} pens)`;
+  }
+
+  return baseScore;
 }
 
 function transformFixture(fixture, index) {
-  const status = getDisplayStatus(fixture);
-
-  const homeTeam =
-    fixture.homeTeam?.name ||
-    "To be determined";
-
-  const awayTeam =
-    fixture.awayTeam?.name ||
-    "To be determined";
-
-  const normalizedHomeTeam =
-    normalizeTeamName(homeTeam);
-
-  const normalizedAwayTeam =
-    normalizeTeamName(awayTeam);
+  const homeTeam = fixture.homeTeam?.name || "To be determined";
+  const awayTeam = fixture.awayTeam?.name || "To be determined";
+  const normalizedHome = normalizeTeamName(homeTeam);
+  const normalizedAway = normalizeTeamName(awayTeam);
+  const city = fixture.venue?.city || "Venue TBD";
+  const venue = fixture.venue?.name || "Venue TBD";
+  const stage = fixture.stage || fixture.round || "World Cup 2026";
 
   const isUSMatch =
-    normalizedHomeTeam === "unitedstates" ||
-    normalizedAwayTeam === "unitedstates" ||
+    normalizedHome === "unitedstates" ||
+    normalizedAway === "unitedstates" ||
     fixture.homeTeam?.code === "USA" ||
     fixture.awayTeam?.code === "USA";
 
   const isArabMatch =
-    ARAB_TEAMS.has(normalizedHomeTeam) ||
-    ARAB_TEAMS.has(normalizedAwayTeam);
+    ARAB_TEAMS.has(normalizedHome) || ARAB_TEAMS.has(normalizedAway);
 
   const isAfricanMatch =
-    AFRICAN_TEAMS.has(normalizedHomeTeam) ||
-    AFRICAN_TEAMS.has(normalizedAwayTeam);
-
-  const city =
-    fixture.venue?.city || "Venue TBD";
-
-  const fanFestivalCity = getFanFestivalCity(city);
-
-  const venue =
-    fixture.venue?.name || "Venue TBD";
-
-  const stage =
-    fixture.stage ||
-    fixture.round ||
-    "World Cup 2026";
-
-  const groupCode =
-    fixture.stageCode === "group" &&
-    /^[A-L]$/i.test(String(fixture.group || ""))
-      ? String(fixture.group).toUpperCase()
-      : null;
-
-  const groupLabel = groupCode
-    ? `Group ${groupCode}`
-    : stage;
-
-  const teamCodes = [
-    fixture.homeTeam?.code,
-    fixture.awayTeam?.code,
-  ].filter(Boolean);
-
-  const time = fixture.date
-    ? formatApiKickoff(fixture.date)
-    : formatCatalogKickoff(
-        fixture.localDate
-      );
-
-  let description = `${groupLabel} fixture scheduled at ${venue} in ${city}.`;
-
-  if (status === "Live") {
-    description = `Live now from ${venue} in ${city}.`;
-  }
-
-  if (status === "Final") {
-    description = `Final whistle at ${venue} in ${city}.`;
-  }
+    AFRICAN_TEAMS.has(normalizedHome) ||
+    AFRICAN_TEAMS.has(normalizedAway);
 
   return {
-    id:
-      fixture.apiFixtureId ||
-      fixture.catalogId ||
-      fixture.id,
-
+    id: fixture.apiFixtureId || fixture.catalogId || fixture.id,
     title: `${homeTeam} vs ${awayTeam}`,
     teams: `${homeTeam} vs ${awayTeam}`,
-
-    /*
-     * Keep this compatible with the existing
-     * App.jsx category list for now.
-     */
     category: "Matchday",
-
     city,
-    fanFestivalCity,
-    status,
-
+    fanFestivalCity: getFanFestivalCity(city),
+    status: "Final",
     isUSMatch,
     isAfricanMatch,
     isArabMatch,
-
-    priority: getPriority(status),
-
-    progressValue: getMatchProgress(
-      fixture,
-      status
-    ),
-
-    progressLabel:
-      status === "Live"
-        ? fixture.status?.elapsed
-          ? `${fixture.status.elapsed} min`
-          : "Live"
-        : status === "Final"
-          ? "Full time"
-          : "Scheduled",
-
-    progressTitle:
-      status === "Live"
-        ? "Match Progress"
-        : "Match Status",
-
-    showProgressBar:
-      status === "Live" ||
-      status === "Final",
-
-    scoreLabel: getScoreText(
-      fixture,
-      status
-    ),
-
-    dataLabel: fixture.liveDataAvailable
-      ? "football-data.org data"
-      : "Published schedule",
-
-    image:
-      CARD_IMAGES[index % CARD_IMAGES.length],
-
-    imageAlt:
-      `${homeTeam} versus ${awayTeam} World Cup match`,
-
-    time,
-
-    coverage: fixture.liveDataAvailable
-      ? "Live score, match clock, team information, venue, and API status"
-      : "Published schedule, venue, stage, and matchup information",
-
+    priority:
+      ["final", "third", "sf"].includes(fixture.stageCode)
+        ? "High"
+        : fixture.stageCode === "qf"
+          ? "Medium"
+          : "Low",
+    fanScore: ARCHIVE_FAN_SIGNALS[index] ?? 85,
+    viewers: "Archived result",
+    progressValue: 100,
+    progressLabel: "Full time",
+    progressTitle: "Match Status",
+    showProgressBar: true,
+    scoreLabel: getScoreText(fixture),
+    dataLabel: "Archived final result",
+    image: CARD_IMAGES[index % CARD_IMAGES.length],
+    imageAlt: `${homeTeam} versus ${awayTeam} World Cup match`,
+    time: formatKickoff(fixture.date),
+    coverage: "Final score, team information, venue, stage, and archived tournament result",
     tags: [
       "WorldCup2026",
       "Matchday",
-
-      groupCode
-        ? `Group${groupCode}`
-        : cleanTag(stage),
-
+      cleanTag(stage),
       cleanTag(homeTeam),
       cleanTag(awayTeam),
       cleanTag(city),
-      status,
-
-      ...(isUSMatch
-        ? ["USMNT", "US Matches"]
-        : []),
-
-      ...(isAfricanMatch
-        ? ["AfricanFocus", "African Teams"]
-        : []),
-
-      ...(isArabMatch
-        ? ["ArabFocus", "Arab Teams"]
-        : []),
+      "Final",
+      ...(isUSMatch ? ["USMNT", "US Matches"] : []),
+      ...(isAfricanMatch ? ["AfricanFocus", "African Teams"] : []),
+      ...(isArabMatch ? ["ArabFocus", "Arab Teams"] : []),
     ],
-
     storylines: [
-      groupLabel,
+      stage,
       `${venue} • ${city}`,
-      fixture.liveDataAvailable
-        ? fixture.status?.long ||
-          "Live data available"
-        : "Published tournament schedule",
+      fixture.status?.long || "Archived final result",
     ],
-
-    description,
-
-    homeTeamLogo:
-      fixture.homeTeam?.flag ||
-      fixture.homeTeam?.logo ||
-      null,
-
-    awayTeamLogo:
-      fixture.awayTeam?.flag ||
-      fixture.awayTeam?.logo ||
-      null,
-
-    dataSource:
-      fixture.dataSource ||
-      "Schedule catalog",
-
-    liveDataAvailable:
-      Boolean(fixture.liveDataAvailable),
-
+    description: `Final result from ${venue} in ${city}.`,
+    homeTeamLogo: fixture.homeTeam?.flag || fixture.homeTeam?.logo || null,
+    awayTeamLogo: fixture.awayTeam?.flag || fixture.awayTeam?.logo || null,
+    dataSource: fixture.dataSource || ARCHIVE_METADATA.source,
+    liveDataAvailable: false,
+    archived: true,
     apiData: fixture,
   };
 }
 
 function buildTrendingTopics(matches) {
-  const topicCounts = new Map();
-  const priorityTopics = [];
-
-  function addPriorityTopic(topic) {
-    if (
-      topic &&
-      !priorityTopics.includes(topic)
-    ) {
-      priorityTopics.push(topic);
-    }
-  }
-
-  function countTopic(topic) {
-    if (!topic) {
-      return;
-    }
-
-    topicCounts.set(
-      topic,
-      (topicCounts.get(topic) || 0) + 1
-    );
-  }
-
-  if (
-    matches.some(
-      (match) => match.status === "Live"
-    )
-  ) {
-    addPriorityTopic("Live");
-  }
-
-  if (
-    matches.some((match) =>
-      /(^|\s)USA(\s|$)/i.test(
-        `${match.title} ${match.teams}`
-      )
-    )
-  ) {
-    addPriorityTopic("USMNT");
-  }
+  const counts = new Map();
 
   matches.forEach((match) => {
-    const groupTag =
-      match.tags?.find((tag) =>
-        /^Group[A-L]$/.test(tag)
-      );
-
-    countTopic(groupTag);
-
-    countTopic(
-      cleanTag(
-        match.apiData?.homeTeam?.name
-      )
-    );
-
-    countTopic(
-      cleanTag(
-        match.apiData?.awayTeam?.name
-      )
-    );
+    [
+      cleanTag(match.apiData?.stage),
+      cleanTag(match.apiData?.homeTeam?.name),
+      cleanTag(match.apiData?.awayTeam?.name),
+    ]
+      .filter(Boolean)
+      .forEach((topic) => counts.set(topic, (counts.get(topic) || 0) + 1));
   });
 
-  const rankedTopics = Array.from(
-    topicCounts.entries()
-  )
-    .sort((a, b) => {
-      const countDifference = b[1] - a[1];
-
-      if (countDifference !== 0) {
-        return countDifference;
-      }
-
-      return a[0].localeCompare(b[0]);
-    })
-    .map(([topic]) => topic);
-
-  return Array.from(
-    new Set([
-      ...priorityTopics,
-      ...rankedTopics,
-    ])
-  )
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 8)
-    .map((topic) => `#${topic}`);
+    .map(([topic]) => `#${topic}`);
 }
 
-function sortDashboardMatches(
-  firstMatch,
-  secondMatch
-) {
-  const today = getTodayDateKey();
-
-  function getMatchBucket(match) {
-    const fixtureDate = getFixtureDateKey(
-      match.apiData
-    );
-
-    const isToday = fixtureDate === today;
-
-    if (
-      isToday &&
-      match.status === "Live"
-    ) {
-      return 0;
-    }
-
-    if (
-      isToday &&
-      match.status === "Final"
-    ) {
-      return 1;
-    }
-
-    if (
-      isToday &&
-      match.status === "Upcoming"
-    ) {
-      return 2;
-    }
-
-    if (match.status === "Upcoming") {
-      return 3;
-    }
-
-    if (match.status === "Final") {
-      return 4;
-    }
-
-    return 5;
-  }
-
-  const firstBucket =
-    getMatchBucket(firstMatch);
-
-  const secondBucket =
-    getMatchBucket(secondMatch);
-
-  if (firstBucket !== secondBucket) {
-    return firstBucket - secondBucket;
-  }
-
-  const firstTimestamp =
-    firstMatch.apiData?.timestamp;
-
-  const secondTimestamp =
-    secondMatch.apiData?.timestamp;
-
-  if (
-    Number.isFinite(firstTimestamp) &&
-    Number.isFinite(secondTimestamp)
-  ) {
-    return firstMatch.status === "Final"
-      ? secondTimestamp - firstTimestamp
-      : firstTimestamp - secondTimestamp;
-  }
-
-  const firstDate =
-    getFixtureDateKey(firstMatch.apiData) ||
-    "0000-00-00";
-
-  const secondDate =
-    getFixtureDateKey(secondMatch.apiData) ||
-    "0000-00-00";
-
-  if (firstDate !== secondDate) {
-    return firstMatch.status === "Final"
-      ? secondDate.localeCompare(firstDate)
-      : firstDate.localeCompare(secondDate);
-  }
-
-  const firstCatalogId =
-    Number(
-      firstMatch.apiData?.catalogId
-    ) || 0;
-
-  const secondCatalogId =
-    Number(
-      secondMatch.apiData?.catalogId
-    ) || 0;
-
-  return firstMatch.status === "Final"
-    ? secondCatalogId - firstCatalogId
-    : firstCatalogId - secondCatalogId;
-}
-
-async function fetchRealMatchCastData() {
-  const response = await fetch(
-    `${API_BASE_URL}/api/world-cup/schedule?overlay=all`
-  );
-
-  if (!response.ok) {
-    let message =
-      `MatchCast API returned HTTP ${response.status}.`;
-
-    try {
-      const errorPayload =
-        await response.json();
-
-      if (errorPayload.message) {
-        message = errorPayload.message;
-      }
-    } catch {
-      // Keep the HTTP status message.
-    }
-
-    throw new Error(message);
-  }
-
-  const payload = await response.json();
-
-  if (
-    !payload.success ||
-    !Array.isArray(payload.data)
-  ) {
-    throw new Error(
-      "MatchCast API returned an invalid schedule response."
-    );
-  }
-
-  const today = getTodayDateKey();
-
-  /*
-   * Prevent old catalog matches from appearing as
-   * upcoming when the Free API plan cannot backfill
-   * results older than yesterday.
-   */
-  const relevantFixtures = payload.data;
-
-  const transformedMatches =
-    relevantFixtures.map(
-      transformFixture
-    );
-
-  const dashboardMatches =
-    transformedMatches
-      .sort(sortDashboardMatches)
-      .slice(0, 12);
+function getArchivedDashboardData() {
+  const matches = FINAL_TOURNAMENT_FIXTURES
+    .map(transformFixture)
+    .sort((a, b) => {
+      const firstDate = a.apiData?.date || "";
+      const secondDate = b.apiData?.date || "";
+      return secondDate.localeCompare(firstDate);
+    })
+    .slice(0, 12);
 
   return {
-    matches: dashboardMatches,
-
-    trendingTopics:
-      buildTrendingTopics(
-        dashboardMatches
-      ),
-
-    lastUpdated:
-      payload.overlay?.fetchedAt ||
-      new Date().toISOString(),
-
-    source: payload.source,
-
-    cached:
-      payload.overlay?.cached ?? false,
-
-    totalScheduleMatches:
-      payload.metadata?.totalMatches ??
-      payload.data.length,
+    matches,
+    trendingTopics: buildTrendingTopics(matches),
+    lastUpdated: ARCHIVE_METADATA.archivedAt,
+    source: ARCHIVE_METADATA.source,
+    cached: true,
+    archived: true,
+    totalScheduleMatches: ARCHIVE_METADATA.totalMatches,
   };
 }
 
 export async function fetchMatchCastData() {
-  try {
-    return await fetchRealMatchCastData();
-  } catch (error) {
-    console.error(
-      "Real MatchCast API request failed:",
-      error
-    );
-
-    if (!USE_MOCK_FALLBACK) {
-      throw error;
-    }
-
-    console.warn(
-      "Using MatchCast mock fallback."
-    );
-
-    const fallback =
-      await fetchMockMatchCastData();
-
-    return {
-      ...fallback,
-      source: "Mock fallback",
-      cached: false,
-    };
+  if (IS_STATIC_MODE) {
+    return getArchivedDashboardData();
   }
+
+  const {
+    fetchMatchCastData: fetchLiveMatchCastData,
+  } = await import("./liveMatchCastApi.js");
+
+  return fetchLiveMatchCastData();
 }
 
-export async function fetchFanEvents(
-  filters = {}
-) {
-  const params = new URLSearchParams();
+function normalizeFilterValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
-  Object.entries(filters).forEach(
-    ([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== ""
-      ) {
-        params.set(key, String(value));
-      }
-    }
-  );
+function getCitySearchValues(city) {
+  const normalized = normalizeFilterValue(city);
+  const aliases = {
+    philadelphia: ["philly"],
+    philly: ["philadelphia"],
+    "east rutherford": ["new york", "bronx", "new jersey"],
+    "new york/new jersey": ["new york", "bronx", "new jersey"],
+    "new york/new jersey (east rutherford)": ["new york", "bronx", "new jersey"],
+    "miami gardens": ["miami"],
+    "miami (miami gardens)": ["miami", "miami gardens"],
+    inglewood: ["los angeles"],
+    "los angeles (inglewood)": ["los angeles", "inglewood"],
+    foxborough: ["boston"],
+    "boston (foxborough)": ["boston", "foxborough"],
+    arlington: ["dallas"],
+    "dallas (arlington, texas)": ["dallas", "arlington"],
+    "santa clara": ["san francisco bay area", "san francisco", "san jose"],
+    "san francisco bay area": ["santa clara", "san francisco", "san jose", "oakland"],
+    seattle: ["seattle stadium", "lumen field"],
+  };
 
-  const queryString = params.toString();
+  return [normalized, ...(aliases[normalized] || [])].filter(Boolean);
+}
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/fan-events${
-      queryString ? `?${queryString}` : ""
-    }`
-  );
+function eventMatchesCity(event, city) {
+  const cityValues = getCitySearchValues(city);
 
-  if (!response.ok) {
-    throw new Error(
-      `Fan-events API returned HTTP ${response.status}.`
-    );
+  if (cityValues.length === 0) {
+    return true;
   }
 
-  const payload = await response.json();
+  const searchable = [
+    event.city,
+    event.region,
+    event.venue,
+    event.locationDetail,
+    event.name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 
-  if (
-    !payload.success ||
-    !Array.isArray(payload.data)
-  ) {
-    throw new Error(
-      "Fan-events API returned an invalid response."
-    );
+  return cityValues.some((value) => searchable.includes(value));
+}
+
+export async function fetchFanEvents(filters = {}) {
+  if (!IS_STATIC_MODE) {
+    const {
+      fetchFanEvents: fetchLiveFanEvents,
+    } = await import("./liveMatchCastApi.js");
+
+    return fetchLiveFanEvents(filters);
   }
+
+  const query = filters.q ?? filters.query;
+
+  const normalizedCountry = normalizeFilterValue(filters.country);
+  const normalizedType = normalizeFilterValue(filters.type);
+  const normalizedQuery = normalizeFilterValue(query);
+
+  const events = FAN_EVENTS.filter((event) => {
+    const searchable = [
+      event.name,
+      event.typeLabel,
+      event.city,
+      event.region,
+      event.country,
+      event.venue,
+      event.locationDetail,
+      event.description,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      eventMatchesCity(event, filters.city) &&
+      (!normalizedCountry || normalizeFilterValue(event.country) === normalizedCountry) &&
+      (!normalizedType || normalizeFilterValue(event.type) === normalizedType) &&
+      (!filters.date || (event.startDate <= filters.date && event.endDate >= filters.date)) &&
+      (filters.official === undefined || filters.official === null || event.official === filters.official) &&
+      (!normalizedQuery || searchable.includes(normalizedQuery))
+    );
+  }).sort((a, b) => a.startDate.localeCompare(b.startDate));
 
   return {
-    events: payload.data,
-    metadata: payload.metadata,
-    filters: payload.filters,
+    events,
+    metadata: {
+      totalEvents: FAN_EVENTS.length,
+      officialEvents: FAN_EVENTS.filter((event) => event.official).length,
+      archived: true,
+    },
+    filters: {
+      city: filters.city || null,
+      country: filters.country || null,
+      type: filters.type || null,
+      date: filters.date || null,
+      official: filters.official ?? null,
+      query: query || null,
+    },
   };
 }
