@@ -25,6 +25,7 @@ import "./App.css";
 
 const CATEGORIES = [
   "All",
+  "Finalists",
   "Today",
   "Live",
   "Upcoming",
@@ -73,6 +74,27 @@ function getMatchDateKey(match) {
   return `${year}-${month}-${day}`;
 }
 
+function isFinalistsMatch(match) {
+  const stageCode = String(
+    match.apiData?.stageCode || ""
+  ).toLowerCase();
+
+  const stageName = String(
+    match.apiData?.stage ||
+      match.apiData?.round ||
+      ""
+  )
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+
+  return (
+    stageCode === "final" ||
+    stageCode === "third" ||
+    stageName === "final" ||
+    stageName.includes("thirdplace")
+  );
+}
+
 function matchesCategoryFilter(
   match,
   selectedCategory,
@@ -81,6 +103,9 @@ function matchesCategoryFilter(
   switch (selectedCategory) {
     case "All":
       return true;
+
+    case "Finalists":
+      return isFinalistsMatch(match);
 
     case "Today":
       return getMatchDateKey(match) === today;
@@ -454,7 +479,7 @@ function App() {
     selectedMatch && fanEventCity
       ? `Verified fan festivals and public viewing experiences connected to ${selectedMatch.title}.`
       : "Verified public viewing experiences, official fan festivals, and host-city celebrations.";
-      
+
 
   function handleRetryFeed() {
     loadCoverageFeed();
@@ -469,6 +494,24 @@ function App() {
     setSelectedCategory(category);
     setSearchTerm("");
     setSelectedTopic("");
+
+    if (category === "Finalists") {
+      const championshipFinal =
+        coverageModules.find(
+          (match) =>
+            String(
+              match.apiData?.stageCode || ""
+            ).toLowerCase() === "final"
+        );
+
+      const placementMatch =
+        championshipFinal ||
+        coverageModules.find(isFinalistsMatch);
+
+      if (placementMatch) {
+        setSelectedMatch(placementMatch);
+      }
+    }
   }
 
   function handleTopicSelect(topic) {
@@ -530,6 +573,11 @@ function App() {
       <Ticker
         matches={tickerMatches}
         mode={tickerMode}
+        onSelectMatch={setSelectedMatch}
+      />
+
+      <PodiumSection
+        matches={coverageModules}
         onSelectMatch={setSelectedMatch}
       />
 
